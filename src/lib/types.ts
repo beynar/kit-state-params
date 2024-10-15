@@ -30,5 +30,7 @@ export type Opts<S extends Schema> = {
 	schema: S;
 	debounce?: number;
 	pushHistory?: boolean;
+	twoWayBinding?: boolean;
+	preserveUnknownParams?: boolean;
 };
 export type Schema = Record<string, Primitive | PrimitiveArray>;

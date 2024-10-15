@@ -2,11 +2,11 @@
 
 ## 1. Introduction
 
-kit-state-params is a lightweight and powerful library for SvelteKit that simplifies state management and URL synchronization. It provides a seamless way to keep your application state in sync with URL search parameters, enhancing user experience and enabling easy sharing of application states.
+kit-state-params is a lightweight and simple library for SvelteKit that simplifies state management and URL synchronization. It provides a seamless way to keep your application state in sync with URL search parameters, enhancing user experience and enabling easy sharing of application states.
 
 Key features:
 
-- works like a normal state in svelte 5
+- Works like a normal state in svelte 5 (reactive and mutable)
 - Automatic URL synchronization: State changes are reflected in the URL, making it easy to share and bookmark specific application states.
 - Type-safe schema definition: Define your state structure with a simple schema, ensuring type safety throughout your application.
 - Reactive state management: Utilizes Svelte's reactive state system for efficient updates and rendering.
@@ -49,7 +49,7 @@ Every mutation will be reflected in the url search params.
 You can use the `debounce` option to customize the time between each update.
 
 Each update will trigger a navigation.
-You can use the `pushHistory` option to control if you want to push a new history entry or replace the current one.
+You can use the `pushHistory` option to control if you want to push a new history entry or replace the current one. By default it will not push a new history entry.
 
 The library will try its best to keep the url clean by removing empty arrays, empty strings, null values and so on.
 
@@ -67,9 +67,6 @@ The library will try its best to keep the url clean by removing empty arrays, em
 
 <button
 	onclick={() => {
-		if (!searchParams.tags) {
-			searchParams.tags = [];
-		}
 		searchParams.tags.push(searchParams.tags.length + 1);
 	}}
 >
@@ -80,6 +77,18 @@ The library will try its best to keep the url clean by removing empty arrays, em
 
 {JSON.stringify(searchParams)}
 ```
+
+### Options
+
+The `stateParams` function accepts an options object. Here's a table describing the available options:
+
+| Name                  | Type      | Description                                                               | Default Value | Required | Example                                  |
+| --------------------- | --------- | ------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
+| schema                | `Schema`  | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: 'number[]' }` |
+| debounce              | `number`  | Time in milliseconds to wait before updating the URL after a state change | `200`         | `false`  | `500`                                    |
+| pushHistory           | `boolean` | Whether to push a new history entry on state change                       | `false`       | `false`  | `true`                                   |
+| twoWayBinding         | `boolean` | Enables synchronization between URL changes and state                     | `true`        | `false`  | `false`                                  |
+| preserveUnknownParams | `boolean` | Keeps URL parameters not defined in the schema                            | `true`        | `false`  | `false`                                  |
 
 ### Server Side
 
@@ -92,9 +101,12 @@ export const load = ({ url }) => {
 		search: 'string',
 		tags: 'number[]'
 	});
-
+	const result = await api.getCustomers({
+		search: searchParams.search,
+		tags: searchParams.tags
+	});
 	return {
-		searchParams
+		result
 	};
 };
 ```

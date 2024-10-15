@@ -110,6 +110,13 @@ describe('stringify', () => {
 		expect(stringify('boolean', 0)).toBe('false');
 		expect(stringify('boolean', '')).toBe('false');
 	});
+
+	it('should handle null values for all types', () => {
+		expect(stringify('string', null)).toBe(null);
+		expect(stringify('number', null)).toBe(null);
+		expect(stringify('date', null)).toBe(null);
+		expect(stringify('boolean', null)).toBe(null);
+	});
 });
 
 describe('stringifyArray', () => {
@@ -173,6 +180,11 @@ describe('stringifyArray', () => {
 		expect(stringifyArray('special', ['a"b', 'c\\d', 'e\nf'], schema)).toBe(
 			'["a\\"b","c\\\\d","e\\nf"]'
 		);
+	});
+
+	it('should handle null input', () => {
+		const schema: Schema = { nullArray: 'string[]' };
+		expect(stringifyArray('nullArray', null, schema)).toBe(null);
 	});
 });
 
@@ -244,6 +256,17 @@ describe('parse', () => {
 		expect(parse('date', '0')).toEqual(new Date(0));
 		expect(parse('date', '1970-01-01T00:00:00Z')).toEqual(new Date(0));
 	});
+
+	it('should handle null value for all types', () => {
+		expect(parse('string', null)).toBe(null);
+		expect(parse('number', null)).toBe(null);
+		expect(parse('date', null)).toBe(null);
+		expect(parse('boolean', 'null')).toBe(null);
+		expect(parse('string', 'null')).toBe(null);
+		expect(parse('number', 'null')).toBe(null);
+		expect(parse('date', 'null')).toBe(null);
+		expect(parse('boolean', 'null')).toBe(null);
+	});
 });
 
 describe('parseURL', () => {
@@ -290,7 +313,7 @@ describe('parseURL', () => {
 			name: 'John',
 			active: null,
 			created: null,
-			tags: null
+			tags: []
 		});
 	});
 
@@ -359,7 +382,7 @@ describe('parseURL', () => {
 			name: null,
 			active: null,
 			created: null,
-			tags: null
+			tags: []
 		});
 	});
 
@@ -371,7 +394,7 @@ describe('parseURL', () => {
 			name: 'John',
 			active: null,
 			created: null,
-			tags: null
+			tags: []
 		});
 	});
 
@@ -396,7 +419,19 @@ describe('parseURL', () => {
 			name: 'John',
 			active: null,
 			created: null,
-			tags: null
+			tags: []
+		});
+	});
+
+	it('should handle null values in URL parameters', () => {
+		const url = 'https://example.com?id=null&name=null&active=null&created=null&tags=null';
+		const result = parseURL(url, schema);
+		expect(result).toEqual({
+			id: null,
+			name: null,
+			active: null,
+			created: null,
+			tags: []
 		});
 	});
 });

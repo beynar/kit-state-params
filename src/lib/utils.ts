@@ -40,12 +40,12 @@ export const stringify = (primitiveType: Primitive, value: any): string | null =
 
 export const stringifyArray = <T extends Schema>(
 	key: keyof SchemaOutput<T>,
-	value: any[],
+	value: any[] | null,
 	schema: T
 ) => {
 	const schemaType = schema[key] as PrimitiveArray;
 	const primitiveType = schemaType.split('[]')[0] as Primitive;
-	const stringified = value
+	const stringified = (value || [])
 		.map((item) => {
 			const stringifiedItem = stringify(primitiveType, item);
 			// Handle mixed types
@@ -61,7 +61,8 @@ export const stringifyArray = <T extends Schema>(
 	return JSON.stringify(stringified);
 };
 
-export const parse = (primitiveType: Primitive, value: string) => {
+export const parse = (primitiveType: Primitive, value: string | null) => {
+	if (value === 'null') return null;
 	switch (primitiveType) {
 		case 'string': {
 			return value || null;
@@ -103,11 +104,12 @@ export const parseURL = <T extends Schema>(url: URL | string, schema: T): Schema
 	const schemaEntries = Object.entries(schema) as [keyof T & string, SchemaType][];
 	for (const [key, type] of schemaEntries) {
 		const value = searchParams.get(key);
+		const isArray = type.endsWith('[]');
 		if (!value) {
-			assign(key, null);
+			assign(key, isArray ? [] : null);
 			continue;
 		}
-		if (type.endsWith('[]')) {
+		if (isArray) {
 			const [primitiveType] = (type as PrimitiveArray).split('[]') as [Primitive];
 			const parsed = safeParseArray(value) as any[];
 			assign(key, parsed.map((item) => parse(primitiveType, item)).filter(Boolean));

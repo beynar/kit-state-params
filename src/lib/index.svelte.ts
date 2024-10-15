@@ -1,8 +1,9 @@
-import type { Opts, Primitive, PrimitiveArray, Schema, SchemaOutput } from './types.js';
+import { onMount } from 'svelte';
 import { SvelteURLSearchParams } from 'svelte/reactivity';
-import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
+import { goto } from '$app/navigation';
 import { page } from '$app/stores';
+import type { Opts, Primitive, PrimitiveArray, Schema, SchemaOutput } from './types.js';
 import { debounce, parseURL, stringify, stringifyArray } from './utils.js';
 
 export const stateParams = <T extends Schema>(opts: Opts<T>) => {
@@ -10,8 +11,61 @@ export const stateParams = <T extends Schema>(opts: Opts<T>) => {
 	let current = $state<SchemaOutput<T>>(parseURL(url, opts.schema));
 	let searchParams = new SvelteURLSearchParams(url.search);
 
+	const cleanUnknownParams = () => {
+		if (opts.preserveUnknownParams === false) {
+			searchParams.forEach((_, key) => {
+				if (!(key in opts.schema)) {
+					searchParams.delete(key);
+				}
+			});
+		}
+	};
+
+	cleanUnknownParams();
+
+	onMount(() => {
+		if (opts.twoWayBinding !== false) {
+			// Sync the search params and the state with changes that occurs outside of a state mutation
+			const handleURLChange = () => {
+				const newSearchParams = new URLSearchParams(window.location.search);
+				if (newSearchParams.toString() !== searchParams.toString()) {
+					const newUrl = new URL(window.location.href);
+					const newState = parseURL(newUrl, opts.schema);
+					for (const key in opts.schema) {
+						const value = opts.schema[key];
+						if (key in newState) {
+							current[key] = newState[key];
+							searchParams.set(key, newUrl.searchParams.get(key) as string);
+						} else {
+							searchParams.delete(key);
+							const isArray = value.endsWith('[]');
+							Object.assign(current, {
+								[key]: isArray ? [] : null
+							});
+						}
+						searchParams.forEach((_, key) => {
+							if (opts.preserveUnknownParams === false) {
+								if (!(key in opts.schema)) {
+									searchParams.delete(key);
+								}
+							}
+							console.log(searchParams.get(key), key);
+							if (searchParams.get(key) === 'null') {
+								searchParams.delete(key);
+							}
+						});
+					}
+				}
+			};
+
+			page.subscribe(handleURLChange);
+		}
+	});
+
 	const updateLocation = debounce(() => {
+		cleanUnknownParams();
 		const query = searchParams.toString();
+
 		if (typeof window !== 'undefined') {
 			const currentSearchParams = new URLSearchParams(window.location.search);
 			if (query !== currentSearchParams.toString()) {
@@ -23,6 +77,18 @@ export const stateParams = <T extends Schema>(opts: Opts<T>) => {
 			}
 		}
 	}, opts.debounce || 200);
+
+	const reset = () => {
+		for (const key in opts.schema) {
+			const value = opts.schema[key];
+			searchParams.delete(key);
+			const isArray = value.endsWith('[]');
+			Object.assign(current, {
+				[key]: isArray ? [] : null
+			});
+		}
+		updateLocation();
+	};
 
 	const updateSearchParams = (key: keyof SchemaOutput<T>, stringified: string | null) => {
 		if (stringified === null || stringified === '') {
@@ -41,6 +107,10 @@ export const stateParams = <T extends Schema>(opts: Opts<T>) => {
 			if (key === '$searchParams') {
 				return searchParams;
 			}
+			if (key === '$reset') {
+				return reset;
+			}
+
 			const value = Reflect.get(target, key);
 			if (Array.isArray(value)) {
 				return new Proxy(value, {
@@ -77,5 +147,8 @@ export const stateParams = <T extends Schema>(opts: Opts<T>) => {
 		}
 	};
 
-	return new Proxy(current, handler) as SchemaOutput<T> & { $searchParams: SvelteURLSearchParams };
+	return new Proxy(current, handler) as SchemaOutput<T> & {
+		$searchParams: SvelteURLSearchParams;
+		$reset: () => void;
+	};
 };
