@@ -1,5 +1,5 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
-import type { Primitive, Schema } from './types.js';
+import type { Primitive, Schema, SchemaOutput } from './types.js';
 
 export const debounce = (fn: () => void, delay: number) => {
 	let timeout: number;
@@ -58,10 +58,10 @@ export const parsePrimitive = (primitiveType: Primitive, value: string | null) =
 	}
 };
 
-export const parseURL = (
+export const parseURL = <S extends Schema>(
 	data: string | URL | URLSearchParams | SvelteURLSearchParams,
-	schema: Schema
-): any => {
+	schema: S
+): SchemaOutput<S> => {
 	const searchParams =
 		typeof data === 'string'
 			? new URL(data).searchParams
