@@ -5,7 +5,7 @@
 		schema: {
 			search: 'string',
 			tags: ['number'],
-			enum: '<test,test2>',
+			enum: ['<test,test2>'],
 			object: {
 				object: {
 					string: 'string'
@@ -13,6 +13,7 @@
 			}
 		}
 	});
+	searchParams.object.object.string;
 </script>
 
 <div style="display: flex; flex-direction: column; gap: 1rem">
@@ -33,14 +34,14 @@
 		</button>
 		<button
 			onclick={() => {
-				searchParams.enum = 'test';
+				searchParams.enum.push('test2');
 			}}
 		>
 			set enum {searchParams.enum}
 		</button>
 		<button
 			onclick={() => {
-				searchParams.enum = 'prout';
+				searchParams.enum.push('prout');
 			}}
 		>
 			set wrong enum {searchParams.enum}
