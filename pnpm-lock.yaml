@@ -45,9 +45,6 @@ importers:
       globals:
         specifier: ^15.0.0
         version: 15.11.0
-      neoqs:
-        specifier: ^6.13.0
-        version: 6.13.0
       prettier:
         specifier: ^3.1.1
         version: 3.3.3
@@ -1070,9 +1067,6 @@ packages:
 
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
-
-  neoqs@6.13.0:
-    resolution: {integrity: sha512-IysBpjrEG9qiUb/IT6XrXSz2ASzBxLebp4s8/GBm7STYC315vMNqH0aWdRR+f7KvXK4aRlLcf5r2Z6dOTxQSrQ==}
 
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
@@ -2460,8 +2454,6 @@ snapshots:
   nanoid@3.3.7: {}
 
   natural-compare@1.4.0: {}
-
-  neoqs@6.13.0: {}
 
   no-case@3.0.4:
     dependencies:

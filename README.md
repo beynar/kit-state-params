@@ -43,7 +43,7 @@ You can use the `debounce` option to customize the time between each update.
 Each update will trigger a navigation.
 You can use the `pushHistory` option to control if you want to push a new history entry or replace the current one. By default it will not push a new history entry.
 
-The library will try its best to keep the url clean by removing empty arrays, empty strings, null values and so on.
+The library will try its best to keep the url clean by removing empty values from arrays, empty strings, null values and so on.
 
 ```svelte
 <script lang="ts">
@@ -68,6 +68,41 @@ The library will try its best to keep the url clean by removing empty arrays, em
 <input bind:value={searchParams.search} />
 
 {JSON.stringify(searchParams)}
+```
+
+### Options
+
+The `stateParams` function accepts an options object. Here's a table describing the available options:
+
+| Name                  | Type                 | Description                                                               | Default Value | Required | Example                                  |
+| --------------------- | -------------------- | ------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
+| schema                | [`Schema`](#schemas) | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: ["number"] }` |
+| debounce              | `number`             | Time in milliseconds to wait before updating the URL after a state change | `200`         | `false`  | `500`                                    |
+| pushHistory           | `boolean`            | Whether to push a new history entry on state change                       | `false`       | `false`  | `true`                                   |
+| twoWayBinding         | `boolean`            | Enables synchronization between URL changes and state                     | `true`        | `false`  | `false`                                  |
+| preserveUnknownParams | `boolean`            | Keeps URL parameters not defined in the schema                            | `true`        | `false`  | `false`                                  |
+
+### Server Side
+
+kit-state-params also exports a `parseURL` function. This function can be used to parse the URL parameters into a typed object. It can be usefull inside the `load` function of a route.
+
+```ts
+import { parseURL } from 'kit-state-params';
+export const load = ({ url }) => {
+	const searchParams = parseURL(url, {
+		search: 'string',
+		tags: ['number']
+	});
+	const result = await api.getCustomers({
+		search: searchParams.search,
+		// search is of type string | null
+		tags: searchParams.tags
+		// tags is of type number[]
+	});
+	return {
+		result
+	};
+};
 ```
 
 ### Schemas
@@ -107,41 +142,6 @@ const schema = {
 			age: 'number'
 		}
 	]
-};
-```
-
-### Options
-
-The `stateParams` function accepts an options object. Here's a table describing the available options:
-
-| Name                  | Type      | Description                                                               | Default Value | Required | Example                                  |
-| --------------------- | --------- | ------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
-| schema                | `Schema`  | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: ["number"] }` |
-| debounce              | `number`  | Time in milliseconds to wait before updating the URL after a state change | `200`         | `false`  | `500`                                    |
-| pushHistory           | `boolean` | Whether to push a new history entry on state change                       | `false`       | `false`  | `true`                                   |
-| twoWayBinding         | `boolean` | Enables synchronization between URL changes and state                     | `true`        | `false`  | `false`                                  |
-| preserveUnknownParams | `boolean` | Keeps URL parameters not defined in the schema                            | `true`        | `false`  | `false`                                  |
-
-### Server Side
-
-kit-state-params also exports a `parseURL` function. This function can be used to parse the URL parameters into a typed object. It can be usefull inside the `load` function of a route.
-
-```ts
-import { parseURL } from 'kit-state-params';
-export const load = ({ url }) => {
-	const searchParams = parseURL(url, {
-		search: 'string',
-		tags: ['number']
-	});
-	const result = await api.getCustomers({
-		search: searchParams.search,
-		// search is of type string | null
-		tags: searchParams.tags
-		// tags is of type number[]
-	});
-	return {
-		result
-	};
 };
 ```
 
