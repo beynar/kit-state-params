@@ -1,6 +1,6 @@
 {
 	"name": "kit-state-params",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",
@@ -19,6 +19,9 @@
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.svelte.js"
 		}
+	},
+	"repository": {
+		"url": "https://github.com/beynar/kit-state-params"
 	},
 	"files": [
 		"dist",

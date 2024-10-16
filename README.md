@@ -8,8 +8,8 @@ Key features:
 
 - Works like a normal state in svelte 5 (reactive and mutable)
 - Automatic URL synchronization: State changes are reflected in the URL, making it easy to share and bookmark specific application states.
-- Accept arrays of primitives, arrays of objects and nested objects.
-- Type-safe schema definition: Define your state structure with a simple schema, ensuring type safety throughout your application.
+- Type safe and runtime safe: Define your state structure with a simple schema, ensuring type safety throughout your application.
+- Handles arrays of primitives, arrays of objects and nested objects.
 - Reactive state management: Utilizes Svelte's reactive state system for efficient updates and rendering.
 - Customizable debounce: Control the frequency of URL updates to optimize performance.
 - History management: Choose between pushing new history entries or replacing the current one.
