@@ -74,15 +74,15 @@ The library will try its best to keep the url clean by removing empty values fro
 
 The `stateParams` function accepts an options object. Here's a table describing the available options:
 
-| Name                  | Type                 | Description                                                               | Default Value                                               | Required | Example                                  |
-| --------------------- | -------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------- | -------- | ---------------------------------------- | --------------------- |
-| schema                | [`Schema`](#schemas) | Defines the structure and types of the URL parameters                     |                                                             | `true`   | `{ search: 'string', tags: ["number"] }` |
-| debounce              | `number`             | Time in milliseconds to wait before updating the URL after a state change | `200`                                                       | `false`  | `500`                                    |
-| pushHistory           | `boolean`            | Whether to push a new history entry on state change                       | `false`                                                     | `false`  | `true`                                   |
-| twoWayBinding         | `boolean`            | Enables synchronization between URL changes and state                     | `true`                                                      | `false`  | `false`                                  |
-| preserveUnknownParams | `boolean`            | Keeps URL parameters not defined in the schema                            | `true`                                                      | `false`  | `false`                                  |
-| invalidateAll         | `boolean`            | Invalidates the state and re-fetches all load functions on state change   | `false`                                                     | `false`  | `false`                                  |
-| invalidate            | `string              | URL`[]                                                                    | Other routes / load functions to invalidate on state change | `[]`     | `false`                                  | `["profile", "user"]` |
+| Name                  | Type                 | Description                                                               | Default Value | Required | Example                                  |
+| --------------------- | -------------------- | ------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
+| schema                | [`Schema`](#schemas) | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: ["number"] }` |
+| debounce              | `number`             | Time in milliseconds to wait before updating the URL after a state change | `200`         | `false`  | `500`                                    |
+| pushHistory           | `boolean`            | Whether to push a new history entry on state change                       | `false`       | `false`  | `true`                                   |
+| twoWayBinding         | `boolean`            | Enables synchronization between URL changes and state                     | `true`        | `false`  | `false`                                  |
+| preserveUnknownParams | `boolean`            | Keeps URL parameters not defined in the schema                            | `true`        | `false`  | `false`                                  |
+| invalidateAll         | `boolean`            | Invalidates the state and re-fetches all load functions on state change   | `false`       | `false`  | `false`                                  |
+| invalidate            | `(string / URL)`[]   | Other routes / load functions to invalidate on state change               | `[]`          | `false`  | `["profile", "user"]`                    |
 
 ### Server Side
 
