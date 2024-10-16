@@ -116,7 +116,7 @@ The `stateParams` function accepts an options object. Here's a table describing 
 
 | Name                  | Type      | Description                                                               | Default Value | Required | Example                                  |
 | --------------------- | --------- | ------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
-| schema                | `Schema`  | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: 'number[]' }` |
+| schema                | `Schema`  | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: ["number"] }` |
 | debounce              | `number`  | Time in milliseconds to wait before updating the URL after a state change | `200`         | `false`  | `500`                                    |
 | pushHistory           | `boolean` | Whether to push a new history entry on state change                       | `false`       | `false`  | `true`                                   |
 | twoWayBinding         | `boolean` | Enables synchronization between URL changes and state                     | `true`        | `false`  | `false`                                  |
