@@ -1,16 +1,5 @@
-import type { Primitive, PrimitiveArray, Schema, SchemaOutput, SchemaType } from './types.js';
-
-const safeParseArray = (value: string): any[] => {
-	try {
-		const maybeArray = JSON.parse(value);
-		if (Array.isArray(maybeArray)) {
-			return maybeArray;
-		}
-		return [];
-	} catch (error) {
-		return [];
-	}
-};
+import type { SvelteURLSearchParams } from 'svelte/reactivity';
+import type { Primitive, Schema } from './types.js';
 
 export const debounce = (fn: () => void, delay: number) => {
 	let timeout: number;
@@ -20,7 +9,7 @@ export const debounce = (fn: () => void, delay: number) => {
 	};
 };
 
-export const stringify = (primitiveType: Primitive, value: any): string | null => {
+export const stringifyPrimitive = (primitiveType: Primitive, value: any): string | null => {
 	switch (primitiveType) {
 		case 'string': {
 			return value === null ? null : String(value);
@@ -38,30 +27,7 @@ export const stringify = (primitiveType: Primitive, value: any): string | null =
 	}
 };
 
-export const stringifyArray = <T extends Schema>(
-	key: keyof SchemaOutput<T>,
-	value: any[] | null,
-	schema: T
-) => {
-	const schemaType = schema[key] as PrimitiveArray;
-	const primitiveType = schemaType.split('[]')[0] as Primitive;
-	const stringified = (value || [])
-		.map((item) => {
-			const stringifiedItem = stringify(primitiveType, item);
-			// Handle mixed types
-			if (item instanceof Date) {
-				return item.toISOString();
-			}
-			return stringifiedItem;
-		})
-		.filter((v) => v !== null);
-	if (stringified.length === 0) {
-		return null;
-	}
-	return JSON.stringify(stringified);
-};
-
-export const parse = (primitiveType: Primitive, value: string | null) => {
+export const parsePrimitive = (primitiveType: Primitive, value: string | null) => {
 	if (value === 'null') return null;
 	switch (primitiveType) {
 		case 'string': {
@@ -92,30 +58,81 @@ export const parse = (primitiveType: Primitive, value: string | null) => {
 	}
 };
 
-export const parseURL = <T extends Schema>(url: URL | string, schema: T): SchemaOutput<T> => {
-	const searchParams = typeof url === 'string' ? new URL(url).searchParams : url.searchParams;
-	const output = {} as SchemaOutput<T>;
+export const parseURL = (
+	data: string | URL | URLSearchParams | SvelteURLSearchParams,
+	schema: Schema
+): any => {
+	const searchParams =
+		typeof data === 'string'
+			? new URL(data).searchParams
+			: data instanceof URL
+				? data.searchParams
+				: data;
+	const paths = Array.from(searchParams.entries());
+	const result: any = {};
+	const pathMap = new Map(paths);
 
-	const assign = (key: keyof T, value: any | null) => {
-		Object.assign(output, {
-			[key]: value
-		});
+	const parseSchemaRecursive = (
+		currentSchema: any,
+		currentResult: any,
+		currentPath: string = ''
+	) => {
+		for (const [key, schemaType] of Object.entries(currentSchema)) {
+			const newPath = currentPath ? `${currentPath}.${key}` : key;
+
+			if (typeof schemaType === 'string') {
+				// Handle primitive types
+				const value = pathMap.get(newPath);
+				currentResult[key] = value ? parsePrimitive(schemaType as Primitive, value) : null;
+			} else if (Array.isArray(schemaType)) {
+				// Handle array types
+				currentResult[key] = [];
+				const arraySchema = schemaType[0];
+
+				for (let i = 0; ; i++) {
+					const arrayPath = `${newPath}.${i}`;
+					if (typeof arraySchema === 'string') {
+						const value = pathMap.get(arrayPath);
+						if (value === undefined) break;
+						currentResult[key].push(parsePrimitive(arraySchema as Primitive, value));
+					} else {
+						if (!Array.from(pathMap.keys()).some((path) => path.startsWith(arrayPath))) break;
+						currentResult[key][i] = {};
+						parseSchemaRecursive(arraySchema, currentResult[key][i], arrayPath);
+					}
+				}
+			} else if (typeof schemaType === 'object') {
+				// Handle nested object types
+				currentResult[key] = {};
+				parseSchemaRecursive(schemaType, currentResult[key], newPath);
+			}
+		}
 	};
-	const schemaEntries = Object.entries(schema) as [keyof T & string, SchemaType][];
-	for (const [key, type] of schemaEntries) {
-		const value = searchParams.get(key);
-		const isArray = type.endsWith('[]');
-		if (!value) {
-			assign(key, isArray ? [] : null);
+
+	parseSchemaRecursive(schema, result);
+	return result;
+};
+
+export const isValidPath = (path: string, schema: Schema): boolean => {
+	const parts = path.split('.');
+	let currentSchema: any = schema;
+
+	for (let i = 0; i < parts.length; i++) {
+		const part = parts[i];
+		if (typeof currentSchema === 'string') return false;
+
+		if (Array.isArray(currentSchema)) {
+			if (!/^\d+$/.test(part)) return false;
+			currentSchema = currentSchema[0];
 			continue;
 		}
-		if (isArray) {
-			const [primitiveType] = (type as PrimitiveArray).split('[]') as [Primitive];
-			const parsed = safeParseArray(value) as any[];
-			assign(key, parsed.map((item) => parse(primitiveType, item)).filter(Boolean));
-		} else {
-			assign(key, parse(type as Primitive, value));
+
+		if (typeof currentSchema !== 'object' || currentSchema === null || !(part in currentSchema)) {
+			return false;
 		}
+
+		currentSchema = currentSchema[part];
 	}
-	return output;
+
+	return true;
 };

@@ -2,27 +2,19 @@
 
 ## 1. Introduction
 
-kit-state-params is a lightweight and simple library for SvelteKit that simplifies state management and URL synchronization. It provides a seamless way to keep your application state in sync with URL search parameters, enhancing user experience and enabling easy sharing of application states.
+kit-state-params is a lightweight query params state management library for SvelteKit that simplifies state management and URL synchronization. It provides a seamless way to keep your application state in sync with URL search parameters, enhancing user experience and enabling easy sharing of application states.
 
 Key features:
 
 - Works like a normal state in svelte 5 (reactive and mutable)
 - Automatic URL synchronization: State changes are reflected in the URL, making it easy to share and bookmark specific application states.
+- Accept arrays of primitives, arrays of objects and nested objects.
 - Type-safe schema definition: Define your state structure with a simple schema, ensuring type safety throughout your application.
 - Reactive state management: Utilizes Svelte's reactive state system for efficient updates and rendering.
 - Customizable debounce: Control the frequency of URL updates to optimize performance.
 - History management: Choose between pushing new history entries or replacing the current one.
 - Clean URL handling: Automatically removes empty values from the URL to keep it tidy.
-- Array support: Handles array parameters with ease, allowing for complex state structures.
-- Easy integration: Designed to work seamlessly with SvelteKit projects.
-
-Missing features:
-
-- No support for nested state.
-- No support for nested arrays.
-- No support for objects.
-
-With kit-state-params, you can create more maintainable and user-friendly web applications by leveraging the power of URL-driven state management.
+- Can preserve unknown params (not defined in the schema).
 
 ## 2. Installation
 
@@ -60,7 +52,7 @@ The library will try its best to keep the url clean by removing empty arrays, em
 	const searchParams = stateParams({
 		schema: {
 			search: 'string',
-			tags: 'number[]'
+			tags: ['number']
 		}
 	});
 </script>
@@ -76,6 +68,46 @@ The library will try its best to keep the url clean by removing empty arrays, em
 <input bind:value={searchParams.search} />
 
 {JSON.stringify(searchParams)}
+```
+
+### Schemas
+
+The schema is a simple object that defines the structure of the URL parameters. It is an object where the keys are the parameter names and the values are the types.
+
+#### Simple schema
+
+```ts
+const schema = {
+	search: 'string',
+	new: 'boolean',
+	startDate: 'date',
+	count: 'number'
+};
+```
+
+#### Schema with arrays and nested objects
+
+```ts
+const schema = {
+	// Define an object with nested objects
+	user: {
+		name: 'string',
+		address: {
+			street: 'string',
+			city: 'string',
+			zip: 'string'
+		}
+	},
+	// Define an array of strings (can be any other primitive: boolean, number, date, etc.)
+	tags: ['string'],
+	// Define an array of objects (objects inside arrays can also be nested)
+	friends: [
+		{
+			name: 'string',
+			age: 'number'
+		}
+	]
+};
 ```
 
 ### Options
@@ -99,11 +131,13 @@ import { parseURL } from 'kit-state-params';
 export const load = ({ url }) => {
 	const searchParams = parseURL(url, {
 		search: 'string',
-		tags: 'number[]'
+		tags: ['number']
 	});
 	const result = await api.getCustomers({
 		search: searchParams.search,
+		// search is of type string
 		tags: searchParams.tags
+		// tags is of type number[]
 	});
 	return {
 		result

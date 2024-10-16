@@ -1,6 +1,4 @@
 export type Primitive = 'string' | 'number' | 'date' | 'boolean';
-export type PrimitiveArray = `${Primitive}[]`;
-export type SchemaType = Primitive | PrimitiveArray;
 
 export type OutputOfPrimitive<T extends Primitive> = T extends 'string'
 	? string | null
@@ -11,19 +9,17 @@ export type OutputOfPrimitive<T extends Primitive> = T extends 'string'
 			: T extends 'boolean'
 				? boolean | null
 				: never;
-export type OutputOfPrimitiveArray<T extends PrimitiveArray> = T extends `${infer P}[]`
-	? P extends Primitive
-		? OutputOfPrimitive<P>[]
-		: never
-	: never;
-export type OutputOfSchema<T extends SchemaType> = T extends PrimitiveArray
-	? OutputOfPrimitiveArray<T>
-	: T extends Primitive
-		? OutputOfPrimitive<T>
-		: never;
 
 export type SchemaOutput<T extends Schema> = {
-	[K in keyof T]: T[K] extends SchemaType ? OutputOfSchema<T[K]> : never;
+	[K in keyof T]: T[K] extends Primitive
+		? OutputOfPrimitive<T[K]>
+		: T[K] extends Schema
+			? SchemaOutput<T[K]>
+			: T[K] extends [Schema]
+				? SchemaOutput<T[K][number]>[]
+				: T[K] extends [Primitive]
+					? OutputOfPrimitive<T[K][number]>[]
+					: never;
 };
 
 export type Opts<S extends Schema> = {
@@ -33,4 +29,8 @@ export type Opts<S extends Schema> = {
 	twoWayBinding?: boolean;
 	preserveUnknownParams?: boolean;
 };
-export type Schema = Record<string, Primitive | PrimitiveArray>;
+export type PrimitiveSchema = Record<string, Primitive>;
+
+export type Schema = {
+	[key: string]: Primitive | Schema | [Schema] | [Primitive];
+};

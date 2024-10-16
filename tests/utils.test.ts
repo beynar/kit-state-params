@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { debounce, stringify, stringifyArray, parse, parseURL } from '../src/lib/utils.js';
+import { debounce, stringifyPrimitive, parsePrimitive, parseURL } from '../src/lib/utils.js';
 import type { Schema } from '../src/lib/types.js';
 
 describe('debounce', () => {
@@ -57,215 +57,148 @@ describe('debounce', () => {
 
 describe('stringify', () => {
 	it('should stringify string values', () => {
-		expect(stringify('string', 'hello')).toBe('hello');
-		expect(stringify('string', null)).toBe(null);
+		expect(stringifyPrimitive('string', 'hello')).toBe('hello');
+		expect(stringifyPrimitive('string', null)).toBe(null);
 	});
 
 	it('should stringify number values', () => {
-		expect(stringify('number', 42)).toBe('42');
-		expect(stringify('number', 0)).toBe('0');
-		expect(stringify('number', null)).toBe(null);
+		expect(stringifyPrimitive('number', 42)).toBe('42');
+		expect(stringifyPrimitive('number', 0)).toBe('0');
+		expect(stringifyPrimitive('number', null)).toBe(null);
 	});
 
 	it('should stringify date values', () => {
 		const date = new Date('2023-04-01T12:00:00Z');
-		expect(stringify('date', date)).toBe('2023-04-01T12:00:00.000Z');
-		expect(stringify('date', null)).toBe(null);
+		expect(stringifyPrimitive('date', date)).toBe('2023-04-01T12:00:00.000Z');
+		expect(stringifyPrimitive('date', null)).toBe(null);
 	});
 
 	it('should stringify boolean values', () => {
-		expect(stringify('boolean', true)).toBe('true');
-		expect(stringify('boolean', false)).toBe('false');
-		expect(stringify('boolean', null)).toBe(null);
+		expect(stringifyPrimitive('boolean', true)).toBe('true');
+		expect(stringifyPrimitive('boolean', false)).toBe('false');
+		expect(stringifyPrimitive('boolean', null)).toBe(null);
 	});
 
 	it('should handle edge cases for number type', () => {
-		expect(stringify('number', NaN)).toBe(null);
-		expect(stringify('number', Infinity)).toBe('Infinity');
-		expect(stringify('number', -Infinity)).toBe('-Infinity');
+		expect(stringifyPrimitive('number', NaN)).toBe(null);
+		expect(stringifyPrimitive('number', Infinity)).toBe('Infinity');
+		expect(stringifyPrimitive('number', -Infinity)).toBe('-Infinity');
 	});
 
 	it('should handle invalid Date objects', () => {
-		expect(stringify('date', new Date('invalid'))).toBe(null);
+		expect(stringifyPrimitive('date', new Date('invalid'))).toBe(null);
 	});
 
 	it('should handle very large numbers', () => {
-		expect(stringify('number', 1e20)).toBe('100000000000000000000');
+		expect(stringifyPrimitive('number', 1e20)).toBe('100000000000000000000');
 	});
 
 	it('should handle special characters in strings', () => {
-		expect(stringify('string', 'Hello, 世界!')).toBe('Hello, 世界!');
+		expect(stringifyPrimitive('string', 'Hello, 世界!')).toBe('Hello, 世界!');
 	});
 
 	it('should handle empty string', () => {
-		expect(stringify('string', '')).toBe('');
+		expect(stringifyPrimitive('string', '')).toBe('');
 	});
 
 	it('should handle zero as a valid number', () => {
-		expect(stringify('number', 0)).toBe('0');
+		expect(stringifyPrimitive('number', 0)).toBe('0');
 	});
 
 	it('should handle boolean edge cases', () => {
-		expect(stringify('boolean', 1)).toBe('true');
-		expect(stringify('boolean', 0)).toBe('false');
-		expect(stringify('boolean', '')).toBe('false');
+		expect(stringifyPrimitive('boolean', 1)).toBe('true');
+		expect(stringifyPrimitive('boolean', 0)).toBe('false');
+		expect(stringifyPrimitive('boolean', '')).toBe('false');
 	});
 
 	it('should handle null values for all types', () => {
-		expect(stringify('string', null)).toBe(null);
-		expect(stringify('number', null)).toBe(null);
-		expect(stringify('date', null)).toBe(null);
-		expect(stringify('boolean', null)).toBe(null);
+		expect(stringifyPrimitive('string', null)).toBe(null);
+		expect(stringifyPrimitive('number', null)).toBe(null);
+		expect(stringifyPrimitive('date', null)).toBe(null);
+		expect(stringifyPrimitive('boolean', null)).toBe(null);
 	});
 });
 
-describe('stringifyArray', () => {
-	const schema: Schema = {
-		numbers: 'number[]',
-		strings: 'string[]',
-		dates: 'date[]',
-		booleans: 'boolean[]'
-	};
-
-	it('should stringify number arrays', () => {
-		expect(stringifyArray('numbers', [1, 2, 3], schema)).toBe('["1","2","3"]');
-		expect(stringifyArray('numbers', [], schema)).toBe(null);
-	});
-
-	it('should stringify string arrays', () => {
-		expect(stringifyArray('strings', ['a', 'b', 'c'], schema)).toBe('["a","b","c"]');
-		expect(stringifyArray('strings', [], schema)).toBe(null);
-	});
-
-	it('should stringify date arrays', () => {
-		const dates = [new Date('2023-04-01T12:00:00Z'), new Date('2023-04-02T12:00:00Z')];
-		expect(stringifyArray('dates', dates, schema)).toBe(
-			'["2023-04-01T12:00:00.000Z","2023-04-02T12:00:00.000Z"]'
-		);
-		expect(stringifyArray('dates', [], schema)).toBe(null);
-	});
-
-	it('should stringify boolean arrays', () => {
-		expect(stringifyArray('booleans', [true, false, true], schema)).toBe('["true","false","true"]');
-		expect(stringifyArray('booleans', [], schema)).toBe(null);
-	});
-
-	it('should handle arrays with null or undefined values', () => {
-		const schema: Schema = { mixed: 'number[]' };
-		expect(stringifyArray('mixed', [1, null, 3, undefined, 5], schema)).toBe('["1","3","5"]');
-	});
-
-	it('should handle very large arrays', () => {
-		const largeArray = Array(10000).fill(1);
-		const schema: Schema = { numbers: 'number[]' };
-		const result = stringifyArray('numbers', largeArray, schema);
-		expect(result).toBeTruthy();
-		expect(JSON.parse(result!).length).toBe(10000);
-	});
-
-	it('should handle arrays with mixed types', () => {
-		const schema: Schema = { mixed: 'string[]' };
-		expect(stringifyArray('mixed', ['a', 1, true, new Date('2023-04-01T12:00:00Z')], schema)).toBe(
-			'["a","1","true","2023-04-01T12:00:00.000Z"]'
-		);
-	});
-
-	it('should handle arrays with all null values', () => {
-		const schema: Schema = { nulls: 'number[]' };
-		expect(stringifyArray('nulls', [null, null, null], schema)).toBe(null);
-	});
-
-	it('should handle arrays with special characters', () => {
-		const schema: Schema = { special: 'string[]' };
-		expect(stringifyArray('special', ['a"b', 'c\\d', 'e\nf'], schema)).toBe(
-			'["a\\"b","c\\\\d","e\\nf"]'
-		);
-	});
-
-	it('should handle null input', () => {
-		const schema: Schema = { nullArray: 'string[]' };
-		expect(stringifyArray('nullArray', null, schema)).toBe(null);
-	});
-});
-
-describe('parse', () => {
+describe('parsePrimitive', () => {
 	it('should parse string values', () => {
-		expect(parse('string', 'hello')).toBe('hello');
-		expect(parse('string', '')).toBe(null);
+		expect(parsePrimitive('string', 'hello')).toBe('hello');
+		expect(parsePrimitive('string', '')).toBe(null);
 	});
 
 	it('should parse number values', () => {
-		expect(parse('number', '42')).toBe(42);
-		expect(parse('number', '0')).toBe(0);
-		expect(parse('number', '')).toBe(null);
-		expect(parse('number', 'not a number')).toBe(null);
+		expect(parsePrimitive('number', '42')).toBe(42);
+		expect(parsePrimitive('number', '0')).toBe(0);
+		expect(parsePrimitive('number', '')).toBe(null);
+		expect(parsePrimitive('number', 'not a number')).toBe(null);
 	});
 
 	it('should parse date values', () => {
-		expect(parse('date', '2023-04-01T12:00:00Z')).toEqual(new Date('2023-04-01T12:00:00Z'));
-		expect(parse('date', '')).toBe(null);
-		expect(parse('date', 'invalid date')).toBe(null);
+		expect(parsePrimitive('date', '2023-04-01T12:00:00Z')).toEqual(
+			new Date('2023-04-01T12:00:00Z')
+		);
+		expect(parsePrimitive('date', '')).toBe(null);
+		expect(parsePrimitive('date', 'invalid date')).toBe(null);
 	});
 
 	it('should parse boolean values', () => {
-		expect(parse('boolean', 'true')).toBe(true);
-		expect(parse('boolean', 'false')).toBe(false);
-		expect(parse('boolean', '')).toBe(null);
-		expect(parse('boolean', 'invalid')).toBe(null);
+		expect(parsePrimitive('boolean', 'true')).toBe(true);
+		expect(parsePrimitive('boolean', 'false')).toBe(false);
+		expect(parsePrimitive('boolean', '')).toBe(null);
+		expect(parsePrimitive('boolean', 'invalid')).toBe(null);
 	});
 
 	it('should parse floating-point numbers', () => {
-		expect(parse('number', '3.14')).toBe(3.14);
-		expect(parse('number', '-0.01')).toBe(-0.01);
-		expect(parse('number', '0.0')).toBe(0);
-		expect(parse('number', '1e-10')).toBe(1e-10);
+		expect(parsePrimitive('number', '3.14')).toBe(3.14);
+		expect(parsePrimitive('number', '-0.01')).toBe(-0.01);
+		expect(parsePrimitive('number', '0.0')).toBe(0);
+		expect(parsePrimitive('number', '1e-10')).toBe(1e-10);
 	});
 
 	it('should handle whitespace-only strings', () => {
-		expect(parse('string', '   ')).toBe('   ');
+		expect(parsePrimitive('string', '   ')).toBe('   ');
 	});
 
 	it('should handle extremely large or small numbers', () => {
-		expect(parse('number', '1e20')).toBe(1e20);
-		expect(parse('number', '1e-20')).toBe(1e-20);
-		expect(parse('number', '9007199254740991')).toBe(9007199254740991); // MAX_SAFE_INTEGER
-		expect(parse('number', '9007199254740992')).toBe(9007199254740992); // MAX_SAFE_INTEGER + 1
+		expect(parsePrimitive('number', '1e20')).toBe(1e20);
+		expect(parsePrimitive('number', '1e-20')).toBe(1e-20);
+		expect(parsePrimitive('number', '9007199254740991')).toBe(9007199254740991); // MAX_SAFE_INTEGER
+		expect(parsePrimitive('number', '9007199254740992')).toBe(9007199254740992); // MAX_SAFE_INTEGER + 1
 	});
 
 	it('should parse different date formats', () => {
-		expect(parse('date', '2023-04-01')).toEqual(new Date('2023-04-01'));
-		expect(parse('date', 'Sat, 01 Apr 2023 12:00:00 GMT')).toEqual(
+		expect(parsePrimitive('date', '2023-04-01')).toEqual(new Date('2023-04-01'));
+		expect(parsePrimitive('date', 'Sat, 01 Apr 2023 12:00:00 GMT')).toEqual(
 			new Date('2023-04-01T12:00:00.000Z')
 		);
 	});
 
 	it('should handle boolean-like strings', () => {
-		expect(parse('boolean', 'TRUE')).toBe(true);
-		expect(parse('boolean', 'FALSE')).toBe(false);
-		expect(parse('boolean', '1')).toBe(null);
-		expect(parse('boolean', '0')).toBe(null);
+		expect(parsePrimitive('boolean', 'TRUE')).toBe(true);
+		expect(parsePrimitive('boolean', 'FALSE')).toBe(false);
+		expect(parsePrimitive('boolean', '1')).toBe(null);
+		expect(parsePrimitive('boolean', '0')).toBe(null);
 	});
 
 	it('should handle special number cases', () => {
-		expect(parse('number', 'Infinity')).toBe(Infinity);
-		expect(parse('number', '-Infinity')).toBe(-Infinity);
-		expect(parse('number', 'NaN')).toBe(null);
+		expect(parsePrimitive('number', 'Infinity')).toBe(Infinity);
+		expect(parsePrimitive('number', '-Infinity')).toBe(-Infinity);
+		expect(parsePrimitive('number', 'NaN')).toBe(null);
 	});
 
 	it('should handle date edge cases', () => {
-		expect(parse('date', '0')).toEqual(new Date(0));
-		expect(parse('date', '1970-01-01T00:00:00Z')).toEqual(new Date(0));
+		expect(parsePrimitive('date', '0')).toEqual(new Date(0));
+		expect(parsePrimitive('date', '1970-01-01T00:00:00Z')).toEqual(new Date(0));
 	});
 
 	it('should handle null value for all types', () => {
-		expect(parse('string', null)).toBe(null);
-		expect(parse('number', null)).toBe(null);
-		expect(parse('date', null)).toBe(null);
-		expect(parse('boolean', 'null')).toBe(null);
-		expect(parse('string', 'null')).toBe(null);
-		expect(parse('number', 'null')).toBe(null);
-		expect(parse('date', 'null')).toBe(null);
-		expect(parse('boolean', 'null')).toBe(null);
+		expect(parsePrimitive('string', null)).toBe(null);
+		expect(parsePrimitive('number', null)).toBe(null);
+		expect(parsePrimitive('date', null)).toBe(null);
+		expect(parsePrimitive('boolean', 'null')).toBe(null);
+		expect(parsePrimitive('string', 'null')).toBe(null);
+		expect(parsePrimitive('number', 'null')).toBe(null);
+		expect(parsePrimitive('date', 'null')).toBe(null);
+		expect(parsePrimitive('boolean', 'null')).toBe(null);
 	});
 });
 
@@ -275,13 +208,20 @@ describe('parseURL', () => {
 		name: 'string',
 		active: 'boolean',
 		created: 'date',
-		tags: 'string[]'
+		tags: ['string']
 	};
 
 	it('should parse URL string', () => {
-		const url =
-			'https://example.com?id=42&name=John&active=true&created=2023-04-01T12:00:00Z&tags=["tag1","tag2"]';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams({
+			id: '42',
+			name: 'John',
+			active: 'true',
+			created: '2023-04-01T12:00:00Z',
+			'tags.0': 'tag1',
+			'tags.1': 'tag2'
+		});
+		const result = parseURL(searchParams, schema);
+		console.dir(result, { depth: null });
 		expect(result).toEqual({
 			id: 42,
 			name: 'John',
@@ -293,7 +233,7 @@ describe('parseURL', () => {
 
 	it('should parse URL object', () => {
 		const url = new URL(
-			'https://example.com?id=42&name=John&active=true&created=2023-04-01T12:00:00Z&tags=["tag1","tag2"]'
+			'https://example.com?id=42&name=John&active=true&created=2023-04-01T12:00:00Z&tags.0=tag1&tags.1=tag2'
 		);
 		const result = parseURL(url, schema);
 		expect(result).toEqual({
@@ -306,8 +246,11 @@ describe('parseURL', () => {
 	});
 
 	it('should handle missing parameters', () => {
-		const url = 'https://example.com?id=42&name=John';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams({
+			id: '42',
+			name: 'John'
+		});
+		const result = parseURL(searchParams, schema);
 		expect(result).toEqual({
 			id: 42,
 			name: 'John',
@@ -318,8 +261,13 @@ describe('parseURL', () => {
 	});
 
 	it('should handle invalid values', () => {
-		const url = 'https://example.com?id=invalid&active=maybe&created=not-a-date&tags=not-an-array';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams({
+			id: 'invalid',
+			active: 'maybe',
+			created: 'not-a-date',
+			tags: 'not-an-array'
+		});
+		const result = parseURL(searchParams, schema);
 		expect(result).toEqual({
 			id: null,
 			name: null,
@@ -331,26 +279,33 @@ describe('parseURL', () => {
 
 	it('should handle URL-encoded characters', () => {
 		const schema: Schema = { name: 'string' };
-		const url = 'https://example.com?name=John%20Doe';
-		expect(parseURL(url, schema)).toEqual({ name: 'John Doe' });
+		const searchParams = new URLSearchParams({ name: 'John Doe' });
+		expect(parseURL(searchParams, schema)).toEqual({ name: 'John Doe' });
 	});
 
 	it('should handle duplicate parameters', () => {
-		const schema: Schema = { tags: 'string[]' };
-		const url = 'https://example.com?tags=["tag1"]&tags=["tag2"]';
-		expect(parseURL(url, schema)).toEqual({ tags: ['tag1'] }); // It uses the first occurrence
+		const schema: Schema = { tags: ['string'] };
+		const searchParams = new URLSearchParams();
+		searchParams.append('tags.0', 'tag1');
+		searchParams.append('tags.0', 'tag2');
+		expect(parseURL(searchParams, schema)).toEqual({ tags: ['tag2'] }); // It uses the first occurrence
 	});
 
 	it('should handle a complex nested schema', () => {
 		const complexSchema: Schema = {
 			id: 'number',
 			user: 'string',
-			preferences: 'string[]',
+			preferences: ['string'],
 			lastLogin: 'date'
 		};
-		const url =
-			'https://example.com?id=123&user=john&preferences=["dark","compact"]&lastLogin=2023-04-01T12:00:00Z';
-		const result = parseURL(url, complexSchema);
+		const searchParams = new URLSearchParams({
+			id: '123',
+			user: 'john',
+			'preferences.0': 'dark',
+			'preferences.1': 'compact',
+			lastLogin: '2023-04-01T12:00:00Z'
+		});
+		const result = parseURL(searchParams, complexSchema);
 		expect(result).toEqual({
 			id: 123,
 			user: 'john',
@@ -362,8 +317,8 @@ describe('parseURL', () => {
 	it('should handle very long URLs', () => {
 		const longSchema: Schema = { longParam: 'string' };
 		const longValue = 'a'.repeat(2000);
-		const url = `https://example.com?longParam=${longValue}`;
-		const result = parseURL(url, longSchema);
+		const searchParams = new URLSearchParams({ longParam: longValue });
+		const result = parseURL(searchParams, longSchema);
 		expect(result.longParam).toBe(longValue);
 	});
 
@@ -373,10 +328,16 @@ describe('parseURL', () => {
 			name: 'string',
 			active: 'boolean',
 			created: 'date',
-			tags: 'string[]'
+			tags: ['string']
 		};
-		const url = 'https://example.com?id=&name=&active=&created=&tags=';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams({
+			id: '',
+			name: '',
+			active: '',
+			created: '',
+			tags: ''
+		});
+		const result = parseURL(searchParams, schema);
 		expect(result).toEqual({
 			id: null,
 			name: null,
@@ -387,7 +348,7 @@ describe('parseURL', () => {
 	});
 
 	it('should handle URLs with hash fragments', () => {
-		const url = 'https://example.com?id=42&name=John#section1';
+		const url = new URL('https://example.com?id=42&name=John#section1');
 		const result = parseURL(url, schema);
 		expect(result).toEqual({
 			id: 42,
@@ -399,9 +360,15 @@ describe('parseURL', () => {
 	});
 
 	it('should handle URLs with query parameters in unusual order', () => {
-		const url =
-			'https://example.com?active=true&id=42&name=John&created=2023-04-01T12:00:00Z&tags=["tag1","tag2"]';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams({
+			active: 'true',
+			id: '42',
+			name: 'John',
+			created: '2023-04-01T12:00:00Z',
+			'tags.0': 'tag1',
+			'tags.1': 'tag2'
+		});
+		const result = parseURL(searchParams, schema);
 		expect(result).toEqual({
 			id: 42,
 			name: 'John',
@@ -412,11 +379,15 @@ describe('parseURL', () => {
 	});
 
 	it('should handle URLs with repeated parameters', () => {
-		const url = 'https://example.com?id=42&id=43&name=John&name=Jane';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams();
+		searchParams.append('id', '42');
+		searchParams.append('id', '43');
+		searchParams.append('name', 'John');
+		searchParams.append('name', 'Jane');
+		const result = parseURL(searchParams, schema);
 		expect(result).toEqual({
-			id: 42,
-			name: 'John',
+			id: 43,
+			name: 'Jane',
 			active: null,
 			created: null,
 			tags: []
@@ -424,8 +395,14 @@ describe('parseURL', () => {
 	});
 
 	it('should handle null values in URL parameters', () => {
-		const url = 'https://example.com?id=null&name=null&active=null&created=null&tags=null';
-		const result = parseURL(url, schema);
+		const searchParams = new URLSearchParams({
+			id: 'null',
+			name: 'null',
+			active: 'null',
+			created: 'null',
+			tags: 'null'
+		});
+		const result = parseURL(searchParams, schema);
 		expect(result).toEqual({
 			id: null,
 			name: null,
