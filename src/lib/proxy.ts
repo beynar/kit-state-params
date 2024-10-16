@@ -1,6 +1,6 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
 import type { Primitive, Schema, SchemaOutput } from './types.js';
-import { stringifyPrimitive } from '$lib/utils.js';
+import { parsePrimitive, stringifyPrimitive } from '$lib/utils.js';
 
 export const createProxy = <T extends Schema>(
 	obj: any,
@@ -56,11 +56,14 @@ export const createProxy = <T extends Schema>(
 			return value;
 		},
 		set(target: SchemaOutput<T>, prop: string, value: any) {
-			// TODO add value validation before reflecting the value
-			Reflect.set(target, prop, value);
 			if (!(prop === 'length' && Array.isArray(target))) {
 				const primitive = (schema[prop] || schema[0]) as Primitive;
-				onUpdate(path ? `${path}.${prop}` : prop, stringifyPrimitive(primitive, value));
+				const parsed = parsePrimitive(primitive, value);
+				const isValid = Array.isArray(target) ? parsed !== null : true;
+				if (isValid) {
+					Reflect.set(target, prop, parsed);
+					onUpdate(path ? `${path}.${prop}` : prop, stringifyPrimitive(primitive, value));
+				}
 			}
 
 			return true;

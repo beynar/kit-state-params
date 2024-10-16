@@ -6,7 +6,7 @@ kit-state-params is a lightweight query params state management library for Svel
 
 Key features:
 
-- Works like a normal state in svelte 5 (reactive and mutable)
+- Works like a normal state in svelte 5 : reactive, mutable and without using the boxed value pattern.
 - Automatic URL synchronization: State changes are reflected in the URL, making it easy to share and bookmark specific application states.
 - Handles `string`, `number`, `date`, `boolean` and `enum` as primitives, arrays of primitives, arrays of objects and nested objects.
 - Type safe and runtime safe: Define your state structure with a simple schema, ensuring type safety throughout your application.
@@ -90,7 +90,7 @@ The `stateParams` function accepts an options object. Here's a table describing 
 
 The schema is a simple object that defines the structure of the URL parameters. It is an object where the keys are the parameter names and the values are the types.
 
-Primitive types are: `string`, `number`, `date`, `boolean`.
+Primitive types are: `string`, `number`, `date`, `boolean` and `enum`.
 
 You can define arrays of primitives and arrays of objects.
 

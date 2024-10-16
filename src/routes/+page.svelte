@@ -27,7 +27,7 @@
 	<div>
 		<button
 			onclick={() => {
-				searchParams.tags.push(searchParams.tags.length + 1);
+				searchParams.tags.push('0');
 			}}
 		>
 			Add tag
