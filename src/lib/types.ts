@@ -28,6 +28,8 @@ export type Opts<S extends Schema> = {
 	pushHistory?: boolean;
 	twoWayBinding?: boolean;
 	preserveUnknownParams?: boolean;
+	invalidateAll?: boolean;
+	invalidate?: (string | URL)[];
 };
 export type PrimitiveSchema = Record<string, Primitive>;
 

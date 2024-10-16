@@ -5,7 +5,7 @@ export const load = async ({ url }: { url: URL }) => {
 		search: 'string',
 		tags: ['number']
 	});
-
+	console.log('server');
 	return {
 		searchParams
 	};

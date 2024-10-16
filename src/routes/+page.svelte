@@ -53,7 +53,8 @@
 				goto(`?${search.toString()}`, {
 					keepFocus: true,
 					noScroll: true,
-					replaceState: true
+					replaceState: true,
+					invalidateAll: true
 				});
 			}}
 		>

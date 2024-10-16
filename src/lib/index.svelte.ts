@@ -1,7 +1,7 @@
 import { onMount } from 'svelte';
 import { SvelteURLSearchParams } from 'svelte/reactivity';
 import { get } from 'svelte/store';
-import { goto } from '$app/navigation';
+import { goto, invalidate } from '$app/navigation';
 import { page } from '$app/stores';
 import type { Opts, Schema, SchemaOutput } from './types.js';
 import { debounce, isValidPath, parseURL } from './utils.js';
@@ -12,7 +12,9 @@ export const stateParams = <T extends Schema>({
 	debounce: debounceTime = 200,
 	preserveUnknownParams = true,
 	pushHistory = false,
-	twoWayBinding = true
+	invalidateAll = false,
+	twoWayBinding = true,
+	invalidate: invalidations = []
 }: Opts<T>) => {
 	const url = get(page).url;
 	let current = $state<SchemaOutput<T>>(parseURL(url, schema));
@@ -64,8 +66,10 @@ export const stateParams = <T extends Schema>({
 			goto(`?${query}`, {
 				keepFocus: true,
 				noScroll: true,
-				replaceState: !pushHistory
+				replaceState: !pushHistory,
+				invalidateAll
 			});
+			invalidations.forEach(invalidate);
 		}
 	}, debounceTime || 200);
 
