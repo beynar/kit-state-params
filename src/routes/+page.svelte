@@ -1,17 +1,22 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { stateParams } from '$lib/index.svelte.js';
+
+	let { data } = $props();
+
+	$inspect(data);
 	const searchParams = stateParams({
 		schema: {
 			search: 'string',
 			tags: ['number'],
-			enum: '<test,test2>',
+			enum: ['<test,test2>'],
 			object: {
 				object: {
 					string: 'string'
 				}
 			}
-		}
+		},
+		shallow: true
 	});
 </script>
 
