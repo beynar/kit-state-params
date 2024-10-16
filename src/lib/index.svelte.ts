@@ -81,11 +81,7 @@ export const stateParams = <T extends Schema>({
 		const currentSearchParams = new URLSearchParams(window.location.search);
 		if (query !== currentSearchParams.toString()) {
 			if (shallow) {
-				if (pushHistory) {
-					pushState(`?${query}`, {});
-				} else {
-					replaceState(`?${query}`, {});
-				}
+				(pushHistory ? pushState : replaceState)(`?${query}`, {});
 				if (invalidateAll) {
 					_invalidateAll();
 				}
@@ -100,7 +96,7 @@ export const stateParams = <T extends Schema>({
 
 			invalidations.forEach(invalidate);
 		}
-	}, debounceTime || 200);
+	}, debounceTime);
 
 	const reset = () => {
 		Array.from(searchParams.keys()).forEach((key) => {

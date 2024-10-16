@@ -1,3 +1,9 @@
+export type Simplify<T> = {
+	[KeyType in keyof T]: T[KeyType] extends SchemaOutput<infer O>
+		? Simplify<SchemaOutput<O>>
+		: T[KeyType];
+} & {};
+
 export type Primitive = 'string' | 'number' | 'date' | 'boolean' | `<${string}>`;
 
 type InferEnum<T> = T extends `<${infer U}>`

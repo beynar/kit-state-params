@@ -1,5 +1,5 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
-import type { Primitive, Schema, SchemaOutput } from './types.js';
+import type { Primitive, Schema, SchemaOutput, Simplify } from './types.js';
 import { parsePrimitive, stringifyPrimitive } from '$lib/utils.js';
 
 export const createProxy = <T extends Schema>(
@@ -25,6 +25,7 @@ export const createProxy = <T extends Schema>(
 			if (key === '$searchParams') {
 				return searchParams;
 			}
+
 			if (key === '$reset') {
 				return reset;
 			}
@@ -52,20 +53,20 @@ export const createProxy = <T extends Schema>(
 					array: Array.isArray(value) ? value : undefined
 				});
 			}
-
 			return value;
 		},
 		set(target: SchemaOutput<T>, prop: string, value: any) {
-			if (!(prop === 'length' && Array.isArray(target))) {
+			const isArrayTargeted = Array.isArray(target);
+			if (!(prop === 'length' && isArrayTargeted)) {
 				const primitive = (schema[prop] || schema[0]) as Primitive;
 				const parsed = parsePrimitive(primitive, value);
-				const isValid = Array.isArray(target) ? parsed !== null : true;
+				const isValid = isArrayTargeted ? parsed !== null : true;
+
 				if (isValid) {
 					Reflect.set(target, prop, parsed);
 					onUpdate(path ? `${path}.${prop}` : prop, stringifyPrimitive(primitive, value));
 				}
 			}
-
 			return true;
 		}
 	};
@@ -76,7 +77,4 @@ export const createProxy = <T extends Schema>(
 			$reset: () => void;
 		}
 	>;
-};
-type Simplify<T> = {
-	[P in keyof T]: T[P];
 };

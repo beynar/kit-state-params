@@ -65,6 +65,7 @@ describe('proxy', () => {
 		});
 		console.log(proxyWithNestedUpdates.array[0].object);
 		proxyWithNestedUpdates.string = 'new string';
+		proxyWithNestedUpdates.date = new Date('2023-05-01T12:00:00Z');
 		proxyWithNestedUpdates.array[0].object.number = 30;
 		proxyWithNestedUpdates.object.boolean = true;
 		proxyWithNestedUpdates.arrayString.push('hello');
@@ -84,12 +85,13 @@ describe('proxy', () => {
 		]);
 
 		expect(url.searchParams.get('string')).toBe('new string');
+		expect(url.searchParams.get('date')).toBe(new Date('2023-05-01T12:00:00Z').toISOString());
 		expect(url.searchParams.get('array.0.object.number')).toBe('30');
 		expect(url.searchParams.get('object.boolean')).toBe('true');
 		expect(url.searchParams.get('arrayString.2')).toBe('test');
 		expect(url.searchParams.get('arrayString.3')).toBe('hello');
 		expect(url.searchParams.get('arrayString.4')).toBe('end');
-
+		console.log(proxyWithNestedUpdates.object.boolean);
 		expect(proxyWithNestedUpdates.string).toBe('new string');
 		expect(proxyWithNestedUpdates.array[0].object.number).toBe(30);
 		expect(proxyWithNestedUpdates.object.boolean).toBe(true);

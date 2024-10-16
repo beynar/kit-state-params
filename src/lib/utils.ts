@@ -57,13 +57,15 @@ export const parsePrimitive = (primitiveType: Primitive, value: string | null) =
 		}
 
 		case 'boolean': {
-			return value && typeof value === 'string'
-				? value.toLowerCase() === 'true'
-					? true
-					: value.toLowerCase() === 'false'
-						? false
-						: null
-				: null;
+			return typeof value === 'boolean'
+				? value
+				: typeof value === 'string'
+					? value.toLowerCase() === 'true'
+						? true
+						: value.toLowerCase() === 'false'
+							? false
+							: null
+					: null;
 		}
 		default: {
 			return validateEnum(primitiveType, value) ? value : null;
