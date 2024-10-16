@@ -5,7 +5,7 @@
 		schema: {
 			search: 'string',
 			tags: ['number'],
-			enum: ['<test,test2>'],
+			enum: '<test,test2>',
 			object: {
 				object: {
 					string: 'string'
@@ -13,7 +13,6 @@
 			}
 		}
 	});
-	searchParams.object.object.string;
 </script>
 
 <div style="display: flex; flex-direction: column; gap: 1rem">

@@ -12,6 +12,7 @@ import { page } from '$app/stores';
 import type { Opts, Schema, SchemaOutput } from './types.js';
 import { debounce, isValidPath, parseURL } from './utils.js';
 import { createProxy } from './proxy.js';
+import { building } from '$app/environment';
 
 export const stateParams = <T extends Schema>({
 	schema,
@@ -23,7 +24,7 @@ export const stateParams = <T extends Schema>({
 	invalidate: invalidations = [],
 	shallow = false
 }: Opts<T>) => {
-	const url = get(page).url;
+	const url = building ? new URL('https://github.com/beynar/kit-state-params') : get(page).url;
 	let current = $state<SchemaOutput<T>>(parseURL(url, schema));
 	let searchParams = new SvelteURLSearchParams(url.search);
 
