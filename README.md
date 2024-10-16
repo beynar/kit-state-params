@@ -32,7 +32,7 @@ bun install kit-state-params
 
 ## 3. Client Side
 
-Create a state with the searchParams function. You need to pass a schema of the parameters you want to use. The type of the state will infered from the schema.
+Create a state with the searchParams function. You need to pass a schema of the parameters you want to use. The type of the state will be infered from the schema.
 The state is a like a normal state in svelte 5. It is reactive and you can mutate or update its properties.
 
 Every mutation will be reflected in the url search params.
@@ -88,6 +88,12 @@ The `stateParams` function accepts an options object. Here's a table describing 
 
 The schema is a simple object that defines the structure of the URL parameters. It is an object where the keys are the parameter names and the values are the types.
 
+Primitive types are: `string`, `number`, `date`, `boolean`.
+
+You can define arrays of primitives and arrays of objects.
+
+Objects can be nested and can be of any type.
+
 #### Simple schema
 
 ```ts
@@ -112,7 +118,7 @@ const schema = {
 			zip: 'string'
 		}
 	},
-	// Define an array of strings (can be any other primitive: boolean, number, date, etc.)
+	// Define an array of strings (can be any other primitive: boolean, number, date)
 	tags: ['string'],
 	// Define an array of objects (objects inside arrays can also be nested)
 	friends: [
