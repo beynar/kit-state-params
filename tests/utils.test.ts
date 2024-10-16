@@ -411,4 +411,81 @@ describe('parseURL', () => {
 			tags: []
 		});
 	});
+
+	it('should handle enum values', () => {
+		const enumSchema: Schema = {
+			color: '<red,green,blue>',
+			size: '<small,medium,large>',
+			status: '<active,inactive>'
+		};
+
+		const searchParams = new URLSearchParams({
+			color: 'red',
+			size: 'medium',
+			status: 'active'
+		});
+
+		const result = parseURL(searchParams, enumSchema);
+		expect(result).toEqual({
+			color: 'red',
+			size: 'medium',
+			status: 'active'
+		});
+	});
+
+	it('should handle invalid enum values', () => {
+		const enumSchema: Schema = {
+			color: '<red,green,blue>',
+			size: '<small,medium,large>'
+		};
+
+		const searchParams = new URLSearchParams({
+			color: 'yellow',
+			size: 'extra-large'
+		});
+
+		const result = parseURL(searchParams, enumSchema);
+		expect(result).toEqual({
+			color: null,
+			size: null
+		});
+	});
+
+	it('should handle missing enum values', () => {
+		const enumSchema: Schema = {
+			color: '<red,green,blue>',
+			size: '<small,medium,large>'
+		};
+
+		const searchParams = new URLSearchParams({
+			color: 'green'
+		});
+
+		const result = parseURL(searchParams, enumSchema);
+		expect(result).toEqual({
+			color: 'green',
+			size: null
+		});
+	});
+
+	it('should handle enum values in arrays', () => {
+		const enumArraySchema: Schema = {
+			colors: ['<red,green,blue>'],
+			sizes: ['<small,medium,large>']
+		};
+
+		const searchParams = new URLSearchParams({
+			'colors.0': 'red',
+			'colors.1': 'blue',
+			'sizes.0': 'small',
+			'sizes.1': 'large',
+			'sizes.2': 'invalid'
+		});
+
+		const result = parseURL(searchParams, enumArraySchema);
+		expect(result).toEqual({
+			colors: ['red', 'blue'],
+			sizes: ['small', 'large', null]
+		});
+	});
 });

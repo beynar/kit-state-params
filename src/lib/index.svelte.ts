@@ -1,7 +1,13 @@
-import { onMount } from 'svelte';
 import { SvelteURLSearchParams } from 'svelte/reactivity';
 import { get } from 'svelte/store';
-import { goto, invalidate } from '$app/navigation';
+import {
+	goto,
+	invalidate,
+	afterNavigate,
+	pushState,
+	replaceState,
+	invalidateAll as _invalidateAll
+} from '$app/navigation';
 import { page } from '$app/stores';
 import type { Opts, Schema, SchemaOutput } from './types.js';
 import { debounce, isValidPath, parseURL } from './utils.js';
@@ -14,13 +20,14 @@ export const stateParams = <T extends Schema>({
 	pushHistory = false,
 	invalidateAll = false,
 	twoWayBinding = true,
-	invalidate: invalidations = []
+	invalidate: invalidations = [],
+	shallow = false
 }: Opts<T>) => {
 	const url = get(page).url;
 	let current = $state<SchemaOutput<T>>(parseURL(url, schema));
 	let searchParams = new SvelteURLSearchParams(url.search);
 
-	const cleanUnknownParams = (sp = searchParams) => {
+	const cleanUnknownParams = () => {
 		if (preserveUnknownParams) return;
 		Array.from(searchParams.keys()).forEach((key) => {
 			if (!isValidPath(key, schema)) {
@@ -31,31 +38,40 @@ export const stateParams = <T extends Schema>({
 
 	cleanUnknownParams();
 
-	onMount(() => {
-		if (!twoWayBinding) return;
-		// Sync the search params and the state with changes that occurs outside of a state mutation
-		const bind = () => {
-			const newSearchParams = new URLSearchParams(window.location.search);
+	// Sync the search params and the state with changes that occurs outside of a state mutation
+	twoWayBinding &&
+		afterNavigate(async ({ complete, to }) => {
+			if (!to) return;
+			await complete;
+			const newSearchParams = new URLSearchParams(to.url.search);
 			if (newSearchParams.toString() !== searchParams.toString()) {
-				Object.assign(current, parseURL(newSearchParams, schema));
+				let hasChanged = false;
 				Array.from(newSearchParams.keys()).forEach((key) => {
 					const isValid = isValidPath(key, schema);
 					if (!isValid && !preserveUnknownParams) {
+						// Remove unknown params
 						newSearchParams.delete(key);
 					} else if (searchParams.get(key) !== newSearchParams.get(key)) {
+						// Assign changed params if they are not already in the search params
 						searchParams.set(key, newSearchParams.get(key)!);
+						if (isValid) {
+							hasChanged = true;
+						}
 					}
 				});
+				// Clean up remaining search params
 				Array.from(searchParams.keys()).forEach((key) => {
 					if (!newSearchParams.has(key)) {
 						searchParams.delete(key);
+						if (isValidPath(key, schema)) {
+							hasChanged = true;
+						}
 					}
 				});
+				// Update the state if the search params have changed
+				hasChanged && Object.assign(current, parseURL(newSearchParams, schema));
 			}
-		};
-
-		page.subscribe(bind);
-	});
+		});
 
 	const updateLocation = debounce(() => {
 		cleanUnknownParams();
@@ -63,12 +79,24 @@ export const stateParams = <T extends Schema>({
 
 		const currentSearchParams = new URLSearchParams(window.location.search);
 		if (query !== currentSearchParams.toString()) {
-			goto(`?${query}`, {
-				keepFocus: true,
-				noScroll: true,
-				replaceState: !pushHistory,
-				invalidateAll
-			});
+			if (shallow) {
+				if (pushHistory) {
+					pushState(`?${query}`, {});
+				} else {
+					replaceState(`?${query}`, {});
+				}
+				if (invalidateAll) {
+					_invalidateAll();
+				}
+			} else {
+				goto(`?${query}`, {
+					keepFocus: true,
+					noScroll: true,
+					replaceState: !pushHistory,
+					invalidateAll
+				});
+			}
+
 			invalidations.forEach(invalidate);
 		}
 	}, debounceTime || 200);
@@ -94,7 +122,6 @@ export const stateParams = <T extends Schema>({
 		updateLocation();
 	};
 
-	// I do not fully understand this, but it seems to works 🫡
 	return createProxy(current, {
 		schema: schema,
 		onUpdate: updateSearchParams,

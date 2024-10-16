@@ -5,14 +5,13 @@
 		schema: {
 			search: 'string',
 			tags: ['number'],
+			enum: '<test,test2>',
 			object: {
 				object: {
 					string: 'string'
 				}
 			}
-		},
-		preserveUnknownParams: false,
-		twoWayBinding: false
+		}
 	});
 </script>
 
@@ -34,6 +33,20 @@
 		</button>
 		<button
 			onclick={() => {
+				searchParams.enum = 'test';
+			}}
+		>
+			set enum {searchParams.enum}
+		</button>
+		<button
+			onclick={() => {
+				searchParams.enum = 'prout';
+			}}
+		>
+			set wrong enum {searchParams.enum}
+		</button>
+		<button
+			onclick={() => {
 				searchParams.object.object.string = searchParams.object.object.string + ' string';
 			}}
 		>
@@ -49,7 +62,7 @@
 		<button
 			onclick={() => {
 				const search = new URLSearchParams(window.location.search);
-				search.set('caca', 'prout');
+				search.set('search', 'prout');
 				goto(`?${search.toString()}`, {
 					keepFocus: true,
 					noScroll: true,

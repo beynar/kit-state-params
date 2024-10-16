@@ -15,6 +15,7 @@ describe('types', () => {
 			string: 'string',
 			date: 'date',
 			arrayString: ['string'],
+			// enum: '<test,test2>',
 			array: [
 				{
 					boolean: 'boolean',
@@ -31,6 +32,7 @@ describe('types', () => {
 			string: 'string',
 			date: new Date(),
 			arrayString: ['string'],
+			// enum: 'test',
 			array: [
 				{
 					boolean: true,

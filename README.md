@@ -8,8 +8,8 @@ Key features:
 
 - Works like a normal state in svelte 5 (reactive and mutable)
 - Automatic URL synchronization: State changes are reflected in the URL, making it easy to share and bookmark specific application states.
+- Handles `string`, `number`, `date`, `boolean` and `enum` as primitives, arrays of primitives, arrays of objects and nested objects.
 - Type safe and runtime safe: Define your state structure with a simple schema, ensuring type safety throughout your application.
-- Handles arrays of primitives, arrays of objects and nested objects.
 - Reactive state management: Utilizes Svelte's reactive state system for efficient updates and rendering.
 - Customizable debounce: Control the frequency of URL updates to optimize performance.
 - History management: Choose between pushing new history entries or replacing the current one.
@@ -38,7 +38,8 @@ The state is a like a normal state in svelte 5. It is reactive and you can mutat
 Every mutation will be reflected in the url search params.
 You can use the `debounce` option to customize the time between each update.
 
-Each update will trigger a navigation.
+Each update will trigger a navigation by default but you can use the `shallow` option to prevent it.
+
 You can use the `pushHistory` option to control if you want to push a new history entry or replace the current one. By default it will not push a new history entry.
 
 The library will try its best to keep the url clean by removing empty strings, null values and so on.
@@ -74,15 +75,16 @@ The library will try its best to keep the url clean by removing empty strings, n
 
 The `stateParams` function accepts an options object. Here's a table describing the available options:
 
-| Name                  | Type                 | Description                                                               | Default Value | Required | Example                                  |
-| --------------------- | -------------------- | ------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
-| schema                | [`Schema`](#schemas) | Defines the structure and types of the URL parameters                     |               | `true`   | `{ search: 'string', tags: ["number"] }` |
-| debounce              | `number`             | Time in milliseconds to wait before updating the URL after a state change | `200`         | `false`  | `500`                                    |
-| pushHistory           | `boolean`            | Whether to push a new history entry on state change                       | `false`       | `false`  | `true`                                   |
-| twoWayBinding         | `boolean`            | Enables synchronization between URL changes and state                     | `true`        | `false`  | `false`                                  |
-| preserveUnknownParams | `boolean`            | Keeps URL parameters not defined in the schema                            | `true`        | `false`  | `false`                                  |
-| invalidateAll         | `boolean`            | Invalidates the state and re-fetches all load functions on state change   | `false`       | `false`  | `false`                                  |
-| invalidate            | `(string / URL)`[]   | Other routes / load functions to invalidate on state change               | `[]`          | `false`  | `["profile", "user"]`                    |
+| Name                  | Type                 | Description                                                                              | Default Value | Required | Example                                  |
+| --------------------- | -------------------- | ---------------------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
+| schema                | [`Schema`](#schemas) | Defines the structure and types of the URL parameters                                    |               | `true`   | `{ search: 'string', tags: ["number"] }` |
+| debounce              | `number`             | Time in milliseconds to wait before updating the URL after a state change                | `200`         | `false`  | `500`                                    |
+| pushHistory           | `boolean`            | Whether to push a new history entry on state change                                      | `false`       | `false`  | `true`                                   |
+| twoWayBinding         | `boolean`            | Enables synchronization between URL changes and state                                    | `true`        | `false`  | `false`                                  |
+| preserveUnknownParams | `boolean`            | Keeps URL parameters not defined in the schema                                           | `true`        | `false`  | `false`                                  |
+| invalidateAll         | `boolean`            | Invalidates the state and re-fetches all load functions on state change                  | `false`       | `false`  | `false`                                  |
+| invalidate            | `(string / URL)`[]   | Other routes / load functions to invalidate on state change                              | `[]`          | `false`  | `["profile", "user"]`                    |
+| shallow               | `boolean`            | If true, will not trigger a navigation and therefore not rerun the current load function | `false`       | `false`  | `true`                                   |
 
 ### Schemas
 
@@ -101,7 +103,8 @@ const schema = {
 	search: 'string',
 	new: 'boolean',
 	startDate: 'date',
-	count: 'number'
+	count: 'number',
+	enum: '<blue,green,red>'
 };
 ```
 
@@ -111,6 +114,7 @@ const schema = {
 const schema = {
 	// Define an object with nested objects
 	user: {
+		language: '<en,fr,es>'
 		name: 'string',
 		address: {
 			street: 'string',

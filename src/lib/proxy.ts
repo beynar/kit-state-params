@@ -19,10 +19,7 @@ export const createProxy = <T extends Schema>(
 		path?: string;
 		array?: any[];
 	}
-): SchemaOutput<T> & {
-	$searchParams: SvelteURLSearchParams;
-	$reset: () => void;
-} => {
+) => {
 	const handler: ProxyHandler<SchemaOutput<T>> = {
 		get(target: SchemaOutput<T>, key: string) {
 			if (key === '$searchParams') {
@@ -33,7 +30,6 @@ export const createProxy = <T extends Schema>(
 			}
 
 			const value = Reflect.get(target, key);
-			const newPath = path ? `${path}.${key}` : key;
 
 			if (array) {
 				if (
@@ -42,19 +38,17 @@ export const createProxy = <T extends Schema>(
 				) {
 					return function (this: any[], ...args: any[]) {
 						Array.prototype[key as keyof typeof Array.prototype].apply(this, args);
-						return this;
 					};
 				}
 			}
 
 			if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
 				return createProxy(value, {
-					// schema: Array.isArray(schema) ? schema[0] : (schema[key as keyof T] as Schema),
 					schema: schema[key as keyof T] as Schema,
 					onUpdate,
 					searchParams,
 					reset,
-					path: newPath,
+					path: path ? `${path}.${key}` : key,
 					array: Array.isArray(value) ? value : undefined
 				});
 			}
@@ -62,21 +56,24 @@ export const createProxy = <T extends Schema>(
 			return value;
 		},
 		set(target: SchemaOutput<T>, prop: string, value: any) {
+			// TODO add value validation before reflecting the value
 			Reflect.set(target, prop, value);
-
-			const isArrayUpdateLength = prop === 'length' && Array.isArray(target);
-			if (!isArrayUpdateLength) {
+			if (!(prop === 'length' && Array.isArray(target))) {
 				const primitive = (schema[prop] || schema[0]) as Primitive;
-				const newPath = path ? `${path}.${prop}` : prop;
-				onUpdate(newPath, stringifyPrimitive(primitive, value));
+				onUpdate(path ? `${path}.${prop}` : prop, stringifyPrimitive(primitive, value));
 			}
 
 			return true;
 		}
 	};
 
-	return new Proxy(obj, handler) as SchemaOutput<T> & {
-		$searchParams: SvelteURLSearchParams;
-		$reset: () => void;
-	};
+	return new Proxy(obj, handler) as Simplify<
+		SchemaOutput<T> & {
+			$searchParams: SvelteURLSearchParams;
+			$reset: () => void;
+		}
+	>;
+};
+type Simplify<T> = {
+	[P in keyof T]: T[P];
 };

@@ -9,6 +9,12 @@ export const debounce = (fn: () => void, delay: number) => {
 	};
 };
 
+const validateEnum = (enumType: string, value: string | null) => {
+	if (!value) return false;
+	const types = enumType.replace('<', '').replace('>', '').split(',');
+	return types.includes(value);
+};
+
 export const stringifyPrimitive = (primitiveType: Primitive, value: any): string | null => {
 	switch (primitiveType) {
 		case 'string': {
@@ -23,6 +29,10 @@ export const stringifyPrimitive = (primitiveType: Primitive, value: any): string
 		}
 		case 'boolean': {
 			return value === null ? null : value ? 'true' : 'false';
+		}
+		default: {
+			// it is an enum
+			return validateEnum(primitiveType, value) ? value : null;
 		}
 	}
 };
@@ -54,6 +64,9 @@ export const parsePrimitive = (primitiveType: Primitive, value: string | null) =
 						? false
 						: null
 				: null;
+		}
+		default: {
+			return validateEnum(primitiveType, value) ? value : null;
 		}
 	}
 };
