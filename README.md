@@ -30,9 +30,7 @@ pnpm install kit-state-params
 bun install kit-state-params
 ```
 
-## 3. Usage
-
-### Client Side
+## 3. Client Side
 
 Create a state with the searchParams function. You need to pass a schema of the parameters you want to use. The type of the state will infered from the schema.
 The state is a like a normal state in svelte 5. It is reactive and you can mutate or update its properties.
@@ -43,7 +41,9 @@ You can use the `debounce` option to customize the time between each update.
 Each update will trigger a navigation.
 You can use the `pushHistory` option to control if you want to push a new history entry or replace the current one. By default it will not push a new history entry.
 
-The library will try its best to keep the url clean by removing empty values from arrays, empty strings, null values and so on.
+The library will try its best to keep the url clean by removing empty strings, null values and so on.
+
+### Basic usage
 
 ```svelte
 <script lang="ts">
@@ -84,29 +84,6 @@ The `stateParams` function accepts an options object. Here's a table describing 
 | invalidateAll         | `boolean`            | Invalidates the state and re-fetches all load functions on state change   | `false`       | `false`  | `false`                                  |
 | invalidate            | `(string / URL)`[]   | Other routes / load functions to invalidate on state change               | `[]`          | `false`  | `["profile", "user"]`                    |
 
-### Server Side
-
-kit-state-params also exports a `parseURL` function. This function can be used to parse the URL parameters into a typed object. It can be usefull inside the `load` function of a route.
-
-```ts
-import { parseURL } from 'kit-state-params';
-export const load = ({ url }) => {
-	const searchParams = parseURL(url, {
-		search: 'string',
-		tags: ['number']
-	});
-	const result = await api.getCustomers({
-		search: searchParams.search,
-		// search is of type string | null
-		tags: searchParams.tags
-		// tags is of type number[]
-	});
-	return {
-		result
-	};
-};
-```
-
 ### Schemas
 
 The schema is a simple object that defines the structure of the URL parameters. It is an object where the keys are the parameter names and the values are the types.
@@ -144,6 +121,36 @@ const schema = {
 			age: 'number'
 		}
 	]
+};
+```
+
+#### Extras
+
+the `stateParams` function returns a proxy reflecting the defined schema that also contains:
+
+- a `$reset` function to clear the search params (it will also clear the unknown params in the url if you set `preserveUnknownParams` to `false`)
+- a `$searchParams` property that is the underlying `SvelteURLSearchParams` reactive URLSearchParams
+
+## 4. Server Side
+
+kit-state-params also exports a `parseURL` function. This function can be used to parse the URL parameters into a typed object. It can be usefull inside the `load` function of a route.
+
+```ts
+import { parseURL } from 'kit-state-params';
+export const load = ({ url }) => {
+	const searchParams = parseURL(url, {
+		search: 'string',
+		tags: ['number']
+	});
+	const result = await api.getCustomers({
+		search: searchParams.search,
+		// search is of type string | null
+		tags: searchParams.tags
+		// tags is of type number[]
+	});
+	return {
+		result
+	};
 };
 ```
 
