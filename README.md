@@ -135,7 +135,7 @@ export const load = ({ url }) => {
 	});
 	const result = await api.getCustomers({
 		search: searchParams.search,
-		// search is of type string
+		// search is of type string | null
 		tags: searchParams.tags
 		// tags is of type number[]
 	});
