@@ -1,27 +1,7 @@
-import type { Schema } from '../src/lib/types.js';
+import type { SimpleSchema } from '../src/lib/types.js';
 import { describe, expect, it } from 'vitest';
 
 import { createProxy } from '$lib/proxy.js';
-
-const schema = {
-	string: 'string',
-	date: 'date',
-	arrayString: ['string'],
-	array: [
-		{
-			boolean: 'boolean',
-			object: {
-				number: 'number'
-			}
-		}
-	],
-	object: {
-		boolean: 'boolean',
-		object: {
-			number: 'number'
-		}
-	}
-} satisfies Schema;
 
 const object = {
 	string: 'test string',
@@ -54,7 +34,25 @@ describe('proxy', () => {
 		const url = new URL('http://localhost');
 
 		const proxyWithNestedUpdates = createProxy(object, {
-			schema,
+			schema: {
+				string: 'string',
+				date: 'date',
+				arrayString: ['string'],
+				array: [
+					{
+						boolean: 'boolean',
+						object: {
+							number: 'number'
+						}
+					}
+				],
+				object: {
+					boolean: 'boolean',
+					object: {
+						number: 'number'
+					}
+				}
+			},
 			onUpdate: (path, value) => {
 				url.searchParams.set(path, value);
 			},
@@ -63,6 +61,7 @@ describe('proxy', () => {
 				console.log('Reset');
 			}
 		});
+
 		console.log(proxyWithNestedUpdates.array[0].object);
 		proxyWithNestedUpdates.string = 'new string';
 		proxyWithNestedUpdates.date = new Date('2023-05-01T12:00:00Z');

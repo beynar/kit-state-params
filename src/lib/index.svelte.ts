@@ -10,7 +10,7 @@ import {
 } from '$app/navigation';
 import { page } from '$app/stores';
 import type { Opts, Schema, SchemaOutput } from './types.js';
-import { debounce, isValidPath, parseURL } from './utils.js';
+import { debounce, isValidPath, isZodSchema, parseURL } from './utils.js';
 import { createProxy } from './proxy.js';
 import { building } from '$app/environment';
 
@@ -24,6 +24,7 @@ export const stateParams = <T extends Schema>({
 	invalidate: invalidations = [],
 	shallow = false
 }: Opts<T>) => {
+	const zodMode = isZodSchema(schema);
 	const url = building ? new URL('https://github.com/beynar/kit-state-params') : get(page).url;
 	let current = $state<SchemaOutput<T>>(parseURL(url, schema));
 	let searchParams = new SvelteURLSearchParams(url.search);
@@ -76,7 +77,7 @@ export const stateParams = <T extends Schema>({
 
 	const updateLocation = debounce(() => {
 		cleanUnknownParams();
-		const query = searchParams.toString();
+		let query = searchParams.toString();
 
 		const currentSearchParams = new URLSearchParams(window.location.search);
 		if (query !== currentSearchParams.toString()) {
@@ -101,11 +102,13 @@ export const stateParams = <T extends Schema>({
 	const reset = () => {
 		Array.from(searchParams.keys()).forEach((key) => {
 			const isValid = isValidPath(key, schema);
+			console.log({ key, isValid });
 			if (isValid || (!isValid && !preserveUnknownParams)) {
 				searchParams.delete(key);
 			}
 		});
 
+		console.log(searchParams.toString());
 		Object.assign(current, parseURL(searchParams, schema));
 		updateLocation();
 	};
@@ -120,7 +123,8 @@ export const stateParams = <T extends Schema>({
 	};
 
 	return createProxy(current, {
-		schema: schema,
+		zodMode,
+		schema,
 		onUpdate: updateSearchParams,
 		searchParams,
 		reset
