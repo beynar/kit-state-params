@@ -1,5 +1,6 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
 import type { Default, Primitive, Schema, SchemaOutput } from './types.js';
+import { coercePrimitive, validateEnum } from './coerce.js';
 
 export const debounce = (fn: () => void, delay: number) => {
 	let timeout: number;
@@ -9,16 +10,10 @@ export const debounce = (fn: () => void, delay: number) => {
 	};
 };
 
-const validateEnum = (enumType: string, value: string | null) => {
-	if (!value) return false;
-	const types = enumType.replace('<', '').replace('>', '').split(',');
-	return types.includes(value);
-};
-
 export const stringifyPrimitive = (primitiveType: Primitive, value: any): string | null => {
 	switch (primitiveType) {
 		case 'string': {
-			return value === null ? null : String(value);
+			return !value ? null : String(value);
 		}
 		case 'number': {
 			return value === null ? null : value || value === 0 ? value.toString() : null;
@@ -33,53 +28,6 @@ export const stringifyPrimitive = (primitiveType: Primitive, value: any): string
 		default: {
 			// it is an enum
 			return validateEnum(primitiveType, value) ? value : null;
-		}
-	}
-};
-
-const coerceBoolean = (value: any | null, DEFAULT_VALUE: any = null) => {
-	if (value === null || value === undefined) return DEFAULT_VALUE;
-	if (typeof value === 'boolean') return value;
-	if (typeof value === 'string') {
-		return value.toLowerCase() === 'true'
-			? true
-			: value.toLowerCase() === 'false'
-				? false
-				: DEFAULT_VALUE;
-	}
-	if (value === 1) return true;
-	if (value === 0) return false;
-	return DEFAULT_VALUE;
-};
-
-export const parsePrimitive = (
-	primitiveType: Primitive,
-	value: string | null,
-	DEFAULT_VALUE: any = null
-) => {
-	if (value === 'null' || value === '' || value === null) return DEFAULT_VALUE;
-	switch (primitiveType) {
-		case 'string': {
-			return value || DEFAULT_VALUE;
-		}
-		case 'number': {
-			const parsed = Number(value);
-			if ((!value || isNaN(parsed)) && parsed !== 0) return DEFAULT_VALUE;
-			return parsed;
-		}
-		case 'date': {
-			return value
-				? isNaN(new Date(value).getTime())
-					? DEFAULT_VALUE
-					: new Date(value === '0' ? 0 : value)
-				: DEFAULT_VALUE;
-		}
-
-		case 'boolean': {
-			return coerceBoolean(value, DEFAULT_VALUE);
-		}
-		default: {
-			return validateEnum(primitiveType, value) ? value : DEFAULT_VALUE;
 		}
 	}
 };
@@ -121,7 +69,7 @@ export const parseURL = <
 				const value = pathMap.get(newPath) || defaultValue;
 				currentResult[key] =
 					value !== undefined && value !== null
-						? parsePrimitive(schemaType as Primitive, value)
+						? coercePrimitive(schemaType as Primitive, value)
 						: null;
 			} else if (Array.isArray(schemaType)) {
 				// Handle array types
@@ -141,7 +89,7 @@ export const parseURL = <
 								break;
 							}
 						}
-						currentResult[key].push(parsePrimitive(arraySchema as Primitive, value));
+						currentResult[key].push(coercePrimitive(arraySchema as Primitive, value));
 					} else {
 						if (!Array.from(pathMap.keys()).some((path) => path.startsWith(arrayPath))) break;
 						currentResult[key][i] = {};
@@ -182,4 +130,11 @@ export const isValidPath = (path: string, schema: Schema): boolean => {
 	}
 
 	return true;
+};
+
+export const isPrimitive = (value: any): value is Primitive => {
+	return (
+		['string', 'number', 'date', 'boolean'].includes(value) ||
+		(value.startsWith?.('<') && value.endsWith?.('>'))
+	);
 };

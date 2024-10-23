@@ -1,6 +1,6 @@
 import type { Schema } from '$lib/types.js';
 import { isValidPath } from '$lib/utils.js';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 
 const schema: Schema = {
 	string: 'string',

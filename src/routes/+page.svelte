@@ -61,10 +61,16 @@
 			searchParams.object.object.string = searchParams.object.object.string + ' string';
 		})}
 		{@render button('Set enum', () => {
-			searchParams.enum = 'test2';
+			searchParams.enum = searchParams.enum === 'test2' ? null : 'test2';
 		})}
 		{@render button('Push wrong enum', () => {
 			searchParams.enums.push('prout');
+		})}
+		{@render button('Reset', () => {
+			searchParams.$reset();
+		})}
+		{@render button('Reset to default', () => {
+			searchParams.$reset(true);
 		})}
 
 		<button

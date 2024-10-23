@@ -101,7 +101,6 @@ export const stateParams = <
 					_invalidateAll();
 				}
 			} else {
-				console.log('goto', `?${query}`);
 				goto(`?${query}`, {
 					keepFocus: true,
 					noScroll: true,
@@ -121,10 +120,9 @@ export const stateParams = <
 				searchParams.delete(key);
 			}
 		});
-
 		Object.assign(
 			current,
-			parseURL(searchParams, schema, enforceDefault ? defaultValue : undefined)
+			parseURL(searchParams, schema, _enforceDefault ? defaultValue : undefined)
 		);
 		updateLocation();
 	};
@@ -141,6 +139,13 @@ export const stateParams = <
 	return createProxy<T, D, Enforce>(current, {
 		schema,
 		onUpdate: updateSearchParams,
+		clearPaths: (path) => {
+			Array.from(url.searchParams.keys()).forEach((key) => {
+				if (key.startsWith(path)) {
+					url.searchParams.delete(key);
+				}
+			});
+		},
 		default: defaultValue,
 		enforceDefault,
 		searchParams,
