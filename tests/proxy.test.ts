@@ -100,5 +100,10 @@ describe('proxy', () => {
 		expect(proxyWithNestedUpdates.array[1].boolean).toBe(false);
 		expect(proxyWithNestedUpdates.date).toEqual(object.date);
 		expect('nonexistent' in proxyWithNestedUpdates).toBe(false);
+
+		proxyWithNestedUpdates.arrayString = [];
+		expect(url.searchParams.get('arrayString')).toBe(null);
+		proxyWithNestedUpdates.arrayString = ['test'];
+		expect(url.searchParams.get('arrayString.0')).toBe('test');
 	});
 });

@@ -1,8 +1,12 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
-import type { Primitive, Schema, SchemaOutput, Simplify } from './types.js';
-import { parsePrimitive, stringifyPrimitive } from '$lib/utils.js';
+import type { Default, Primitive, Schema, SchemaOutput, Simplify } from './types.js';
+import { parsePrimitive, parseURL, stringifyPrimitive } from '$lib/utils.js';
 
-export const createProxy = <T extends Schema>(
+export const createProxy = <
+	T extends Schema,
+	D extends Default<T> | undefined,
+	Enforce extends boolean = false
+>(
 	obj: any,
 	{
 		schema,
@@ -10,14 +14,18 @@ export const createProxy = <T extends Schema>(
 		searchParams,
 		reset,
 		path = '',
-		array
+		array,
+		default: defaultValue,
+		enforceDefault
 	}: {
 		schema: T;
+		enforceDefault?: boolean;
 		onUpdate: (path: string, value: any) => void;
 		searchParams: SvelteURLSearchParams | URLSearchParams;
 		reset: () => void;
 		path?: string;
 		array?: any[];
+		default?: any;
 	}
 ) => {
 	const handler: ProxyHandler<SchemaOutput<T>> = {
@@ -50,31 +58,43 @@ export const createProxy = <T extends Schema>(
 					searchParams,
 					reset,
 					path: path ? `${path}.${key}` : key,
-					array: Array.isArray(value) ? value : undefined
+					array: Array.isArray(value) ? value : undefined,
+					default: defaultValue?.[key as keyof T]
 				});
 			}
 			return value;
 		},
-		set(target: SchemaOutput<T>, prop: string, value: any) {
+		set(target: SchemaOutput<T>, prop: string, value: any, receiver: any) {
+			console.log('set', target, prop, value, receiver);
 			const isArrayTargeted = Array.isArray(target);
 			if (!(prop === 'length' && isArrayTargeted)) {
 				const primitive = (schema[prop] || schema[0]) as Primitive;
-				const parsed = parsePrimitive(primitive, value);
-				const isValid = isArrayTargeted ? parsed !== null : true;
-
-				if (isValid) {
+				if (Array.isArray(primitive) && Array.isArray(value)) {
+					const parsed = value.map((v) => {
+						parsePrimitive(primitive[0], v, enforceDefault && defaultValue?.[prop]);
+					});
 					Reflect.set(target, prop, parsed);
-					onUpdate(path ? `${path}.${prop}` : prop, stringifyPrimitive(primitive, value));
+					value.forEach((v, i) => {
+						onUpdate(
+							path ? `${path}.${prop}.${i}` : `${prop}.${i}`,
+							stringifyPrimitive(primitive[0], v)
+						);
+					});
+				} else {
+					const parsed = parsePrimitive(primitive, value, enforceDefault && defaultValue?.[prop]);
+					const isValid = isArrayTargeted ? parsed !== null : true;
+					if (isValid) {
+						Reflect.set(target, prop, parsed);
+						onUpdate(path ? `${path}.${prop}` : prop, stringifyPrimitive(primitive, value));
+					}
 				}
 			}
 			return true;
 		}
 	};
 
-	return new Proxy(obj, handler) as Simplify<
-		SchemaOutput<T> & {
-			$searchParams: SvelteURLSearchParams;
-			$reset: () => void;
-		}
-	>;
+	return new Proxy(obj, handler) as Simplify<SchemaOutput<T, D, Enforce>> & {
+		$searchParams: SvelteURLSearchParams;
+		$reset: (enforceDefault?: boolean) => void;
+	};
 };

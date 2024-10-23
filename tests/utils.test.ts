@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { debounce, stringifyPrimitive, parsePrimitive, parseURL } from '../src/lib/utils.js';
-import type { Schema } from '../src/lib/types.js';
+import type { Default, Schema } from '../src/lib/types.js';
 
 describe('debounce', () => {
 	it('should delay function execution', async () => {
@@ -192,6 +192,7 @@ describe('parsePrimitive', () => {
 
 	it('should handle null value for all types', () => {
 		expect(parsePrimitive('string', null)).toBe(null);
+		console.log(parsePrimitive('number', null));
 		expect(parsePrimitive('number', null)).toBe(null);
 		expect(parsePrimitive('date', null)).toBe(null);
 		expect(parsePrimitive('boolean', 'null')).toBe(null);
@@ -221,7 +222,7 @@ describe('parseURL', () => {
 			'tags.1': 'tag2'
 		});
 		const result = parseURL(searchParams, schema);
-		console.dir(result, { depth: null });
+
 		expect(result).toEqual({
 			id: 42,
 			name: 'John',

@@ -1,6 +1,8 @@
 // import { parseURL } from '$lib/index.js';
-
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const load = async () => {
+	await wait(2000);
+	console.log('yes');
 	// const searchParams = parseURL(url, {
 	// 	search: 'string',
 	// 	tags: ['number'],
@@ -10,6 +12,7 @@ export const load = async () => {
 	// return {
 	// 	searchParams
 	// };
+	return {
+		hello: Date.now()
+	};
 };
-
-export const prerender = true;
