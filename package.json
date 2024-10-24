@@ -1,5 +1,5 @@
 {
-	"name": "kit-state-params",
+	"name": "kit-query-params",
 	"version": "0.0.23",
 	"scripts": {
 		"dev": "vite dev",

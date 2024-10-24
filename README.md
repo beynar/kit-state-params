@@ -1,8 +1,8 @@
-# kit-state-params
+# kit-query-params
 
 ## 1. Introduction
 
-kit-state-params is a lightweight query params state management library for SvelteKit that simplifies state management and URL synchronization. It provides a seamless way to keep your application state in sync with URL search parameters, enhancing user experience and enabling easy sharing of application states.
+kit-query-params is a lightweight query params state management library for SvelteKit that simplifies state management and URL synchronization. It provides a seamless way to keep your application state in sync with URL search parameters, enhancing user experience and enabling easy sharing of application states.
 
 Key features:
 
@@ -19,15 +19,15 @@ Key features:
 ## 2. Installation
 
 ```bash
-npm install kit-state-params
+npm install kit-query-params
 ```
 
 ```bash
-pnpm install kit-state-params
+pnpm install kit-query-params
 ```
 
 ```bash
-bun install kit-state-params
+bun install kit-query-params
 ```
 
 ## 3. Client Side
@@ -48,7 +48,7 @@ The library will try its best to keep the url clean by removing empty strings, n
 
 ```svelte
 <script lang="ts">
-	import { stateParams } from 'kit-state-params';
+	import { stateParams } from 'kit-query-params';
 
 	const searchParams = stateParams({
 		schema: {
@@ -156,10 +156,10 @@ the `stateParams` function returns a proxy reflecting the defined schema that al
 
 ## 4. Server Side
 
-kit-state-params also exports a `parseURL` function. This function can be used to parse the URL parameters into a typed object. It can be usefull inside the `load` function of a route.
+kit-query-params also exports a `parseURL` function. This function can be used to parse the URL parameters into a typed object. It can be usefull inside the `load` function of a route.
 
 ```ts
-import { parseURL } from 'kit-state-params';
+import { parseURL } from 'kit-query-params';
 export const load = ({ url }) => {
 	const searchParams = parseURL(url, {
 		search: 'string',

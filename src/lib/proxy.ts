@@ -45,6 +45,7 @@ export const createProxy = <
 			const value = Reflect.get(target, key);
 
 			if (array) {
+				// Handle array mutation methods
 				if (
 					typeof key === 'string' &&
 					['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse'].includes(key)
@@ -59,6 +60,42 @@ export const createProxy = <
 							Reflect.set(target, 'length', index - 1);
 						}
 						return result;
+					};
+				}
+
+				// Handle array read methods
+				if (
+					typeof key === 'string' &&
+					[
+						'includes',
+						'indexOf',
+						'lastIndexOf',
+						'forEach',
+						'map',
+						'filter',
+						'reduce',
+						'every',
+						'some',
+						'find',
+						'findIndex',
+						'findLast',
+						'findLastIndex',
+						'join',
+						'keys',
+						'values',
+						'entries',
+						'slice',
+						'concat',
+						'flat',
+						'flatMap',
+						'reduceRight',
+						'at',
+						'toString',
+						'toLocaleString'
+					].includes(key)
+				) {
+					return function (...args: any[]) {
+						return Array.prototype[key as keyof typeof Array.prototype].apply(target, args);
 					};
 				}
 			}
