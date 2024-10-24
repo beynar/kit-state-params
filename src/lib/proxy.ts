@@ -1,6 +1,6 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
 import type { Default, Schema, SchemaOutput, Simplify } from './types.js';
-import { stringifyPrimitive, isPrimitive } from '$lib/utils.js';
+import { stringifyPrimitive, isPrimitive } from './utils.js';
 import { traverseSchema } from './traverse.js';
 import { coerceArray, coerceObject, coercePrimitive, coercePrimitiveArray } from './coerce.js';
 
@@ -133,7 +133,6 @@ export const createProxy = <
 					Reflect.set(target, prop, parsed);
 				} else {
 					const parsed = coercePrimitive(primitive, value, enforceDefault && defaultValue?.[prop]);
-					console.log('parsed', prop, primitive, parsed);
 					if (parsed === null && !isNaN(Number(prop))) {
 						// we avoid pushing null values to the array
 						return true;

@@ -75,18 +75,31 @@ The library will try its best to keep the url clean by removing empty strings, n
 
 The `stateParams` function accepts an options object. Here's a table describing the available options:
 
-| Name                  | Type                 | Description                                                                              | Default Value | Required | Example                                  |
-| --------------------- | -------------------- | ---------------------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
-| schema                | [`Schema`](#schemas) | Defines the structure and types of the URL parameters                                    |               | `true`   | `{ search: 'string', tags: ["number"] }` |
-| debounce              | `number`             | Time in milliseconds to wait before updating the URL after a state change                | `200`         | `false`  | `500`                                    |
-| pushHistory           | `boolean`            | Whether to push a new history entry on state change                                      | `false`       | `false`  | `true`                                   |
-| twoWayBinding         | `boolean`            | Enables synchronization between URL changes and state                                    | `true`        | `false`  | `false`                                  |
-| preserveUnknownParams | `boolean`            | Keeps URL parameters not defined in the schema                                           | `true`        | `false`  | `false`                                  |
-| invalidateAll         | `boolean`            | Invalidates the state and re-fetches all load functions on state change                  | `false`       | `false`  | `false`                                  |
-| invalidate            | `(string / URL)`[]   | Other routes / load functions to invalidate on state change                              | `[]`          | `false`  | `["profile", "user"]`                    |
-| shallow               | `boolean`            | If true, will not trigger a navigation and therefore not rerun the current load function | `false`       | `false`  | `true`                                   |
+| Name                  | Type                    | Description                                                                                                                                                                         | Default Value | Required | Example                                  |
+| --------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
+| schema                | [`Schema`](#schemas)    | Defines the structure and types of the URL parameters                                                                                                                               |               | `true`   | `{ search: 'string', tags: ["number"] }` |
+| debounce              | `number`                | Time in milliseconds to wait before updating the URL after a state change                                                                                                           | `200`         | `false`  | `500`                                    |
+| pushHistory           | `boolean`               | Whether to push a new history entry on state change                                                                                                                                 | `false`       | `false`  | `true`                                   |
+| twoWayBinding         | `boolean`               | Enables synchronization between URL changes and state                                                                                                                               | `true`        | `false`  | `false`                                  |
+| preserveUnknownParams | `boolean`               | Keeps URL parameters not defined in the schema                                                                                                                                      | `true`        | `false`  | `false`                                  |
+| invalidateAll         | `boolean`               | Invalidates the state and re-fetches all load functions on state change                                                                                                             | `false`       | `false`  | `false`                                  |
+| invalidate            | `(string / URL)`[]      | Other routes / load functions to invalidate on state change                                                                                                                         | `[]`          | `false`  | `["profile", "user"]`                    |
+| shallow               | `boolean`               | If true, will not trigger a navigation and therefore not rerun the current load function                                                                                            | `false`       | `false`  | `true`                                   |
+| default               | the type of your schema | The default value of the state. It will be used to initialize the state if no value is found in the url                                                                             | `undefined`   | `false`  | `{ search: 'hello', tags: [1, 2] }`      |
+| enforceDefault        | `boolean`               | If true, will enforce the default value when a value is set to null or when the state is `$reset`. This led to removing `null` from the types of the values defined in your default | `false`       | `false`  | `true`                                   |
 
-### Schemas
+### Schema
+
+> [!Note on schema, validation and coercion]
+> The schema is not a validator per se. It will ensure that the type of the value is correct but it will also coerce the value to the correct type rather than throwing an error. For example, if the value is `"12"` and the type is `number`, it will be coerced to `12`. If the value can not be coerced, it will be set to `null`.
+>
+> This allows to never have invalid values in the state but also to preserve the schema structure.
+>
+> Therefore the validation will never throw an error while keeping your app safe from invalid values.
+>
+> I did that because of the nature of search params, they can be easily manipulated by users (that can lead to invalid values in the state) and they can also be stored and shared (they can be staled). In the event of a schema change I assumed that no one would want to throw an error or a 404 for a user just because he has an old url.
+>
+> At runtime, when modifying the state, the library will check if the value is of the correct type. If not, it will coerce it to the correct type. If it can not be coerced, it will prevent the update.
 
 The schema is a simple object that defines the structure of the URL parameters. It is an object where the keys are the parameter names and the values are the types.
 

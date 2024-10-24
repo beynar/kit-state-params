@@ -4,7 +4,6 @@ import {
 	goto,
 	invalidate,
 	afterNavigate,
-	onNavigate,
 	pushState,
 	replaceState,
 	invalidateAll as _invalidateAll
@@ -89,18 +88,20 @@ export const stateParams = <
 	const updateLocation = debounce(() => {
 		cleanUnknownParams();
 		const query = searchParams.toString();
+		const hash = window.location.hash;
 		const currentSearchParams = new URLSearchParams(window.location.search);
 		if (query !== currentSearchParams.toString()) {
 			if (shallow) {
-				(pushHistory ? pushState : replaceState)(`?${query}`, {});
+				(pushHistory ? pushState : replaceState)(`?${query}${hash}`, {});
 				if (invalidateAll) {
 					_invalidateAll();
 				}
 			} else {
-				goto(`?${query}`, {
+				goto(`?${query}${hash}`, {
 					keepFocus: true,
 					noScroll: true,
-					replaceState: !pushHistory
+					replaceState: !pushHistory,
+					invalidateAll
 				});
 			}
 

@@ -19,19 +19,18 @@
 		},
 		default: {
 			search: 'caca',
-			enum: 'test2',
-			object: {
-				object: {
-					string: 'hello'
-				}
-			}
-		},
-		shallow: false
+			enum: 'test2'
+		}
+
 		// enforceDefault: true
 	});
 
 	const tag = $state({ name: 'one', value: 2 });
-	const name = $state(2);
+	const object = $state({
+		object: {
+			string: 'hello'
+		}
+	});
 </script>
 
 {#snippet button(label: string, onclick: () => void)}
@@ -65,6 +64,9 @@
 		})}
 		{@render button('Push into enum', () => {
 			searchParams.enums.push('test2');
+		})}
+		{@render button('Assign object', () => {
+			searchParams.object = object;
 		})}
 		{@render button('Set nested property', () => {
 			searchParams.object.object.string = searchParams.object.object.string + ' string';
