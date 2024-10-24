@@ -15,7 +15,7 @@ import { createProxy } from './proxy.js';
 import { building } from '$app/environment';
 import { coerceObject } from './coerce.js';
 
-export const stateParams = <
+export const queryParams = <
 	T extends Schema,
 	D extends Default<T> | undefined,
 	Enforce extends boolean = false

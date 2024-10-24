@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { stateParams } from '$lib/index.svelte.js';
+	import { queryParams } from '$lib/index.svelte.js';
 
 	let { data } = $props();
 
 	$inspect(data);
-	const searchParams = stateParams({
+	const params = queryParams({
 		schema: {
 			search: 'string',
 			tags: ['number'],
@@ -46,61 +46,60 @@
 	<div class="max-w-full mx-auto mt-24">
 		<div class="bg-gray-900 text-white p-4 rounded-md">
 			<div class="overflow-x-visible">
-				<pre id="code" class="text-gray-300"><code>{JSON.stringify(searchParams, null, 2)}</code
-					></pre>
+				<pre id="code" class="text-gray-300"><code>{JSON.stringify(params, null, 2)}</code></pre>
 			</div>
 		</div>
 	</div>
 
 	<div class="flex gap-4 flex-wrap">
 		{@render button('Reassign tags', () => {
-			searchParams.tags = [0, 1, 2];
+			params.tags = [0, 1, 2];
 		})}
 		{@render button('Push a state', () => {
-			searchParams.tags.push(tag.value);
+			params.tags.push(tag.value);
 		})}
 		{@render button('fitler tag', () => {
-			searchParams.tags = searchParams.tags.filter((t) => t !== 2);
+			params.tags = params.tags.filter((t) => t !== 2);
 		})}
 		{@render button('Push into enum', () => {
-			searchParams.enums.push('test2');
+			params.enums.push('test2');
 		})}
 		{@render button('Assign object', () => {
-			searchParams.object = object;
+			params.object = object;
 		})}
 		{@render button('Set nested property', () => {
-			searchParams.object.object.string = searchParams.object.object.string + ' string';
+			params.object.object.string = params.object.object.string + ' string';
 		})}
 		{@render button('Set enum', () => {
-			searchParams.enum = searchParams.enum === 'test2' ? null : 'test2';
+			params.enum = params.enum === 'test2' ? null : 'test2';
 		})}
 		{@render button('Push wrong enum', () => {
-			searchParams.enums.push('prout');
+			params.enums.push('prout');
 		})}
 		{@render button('Reset', () => {
-			searchParams.$reset();
+			params.$reset();
 		})}
 		{@render button('Reset to default', () => {
-			searchParams.$reset(true);
+			params.$reset(true);
 		})}
 
 		<button
 			onclick={() => {
-				searchParams.object.object.string = searchParams.object.object.string + ' string';
+				params.object.object.string = params.object.object.string + ' string';
 			}}
 		>
-			Set nested : {searchParams.object.object.string}
+			Set nested : {params.object.object.string}
 		</button>
 		<button
 			onclick={() => {
-				searchParams.$reset();
+				params.$reset();
 			}}
 		>
 			reset
 		</button>
 		<button
 			onclick={() => {
-				const search = new URLSearchParams(window.location.search);
+				const search = new URLparams(window.location.search);
 				search.set('search', 'prout');
 				goto(`?${search.toString()}`, {
 					keepFocus: true,
@@ -113,6 +112,6 @@
 			Go to
 		</button>
 
-		<input bind:value={searchParams.search} />
+		<input bind:value={params.search} />
 	</div>
 </div>

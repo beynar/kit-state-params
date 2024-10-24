@@ -32,7 +32,7 @@ bun install kit-query-params
 
 ## 3. Client Side
 
-Create a state with the searchParams function. You need to pass a schema of the parameters you want to use. The type of the state will be infered from the schema.
+Create a state with the params function. You need to pass a schema of the parameters you want to use. The type of the state will be infered from the schema.
 The state is a like a normal state in svelte 5. It is reactive and you can mutate or update its properties.
 
 Every mutation will be reflected in the url search params.
@@ -48,9 +48,9 @@ The library will try its best to keep the url clean by removing empty strings, n
 
 ```svelte
 <script lang="ts">
-	import { stateParams } from 'kit-query-params';
+	import { queryParams } from 'kit-query-params';
 
-	const searchParams = stateParams({
+	const params = queryParams({
 		schema: {
 			search: 'string',
 			tags: ['number']
@@ -60,20 +60,20 @@ The library will try its best to keep the url clean by removing empty strings, n
 
 <button
 	onclick={() => {
-		searchParams.tags.push(searchParams.tags.length + 1);
+		params.tags.push(params.tags.length + 1);
 	}}
 >
 	Add tag
 </button>
 
-<input bind:value={searchParams.search} />
+<input bind:value={params.search} />
 
-{JSON.stringify(searchParams)}
+{JSON.stringify(params)}
 ```
 
 ### Options
 
-The `stateParams` function accepts an options object. Here's a table describing the available options:
+The `queryParams` function accepts an options object. Here's a table describing the available options:
 
 | Name                  | Type                    | Description                                                                                                                                                                         | Default Value | Required | Example                                  |
 | --------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------- | ---------------------------------------- |
@@ -149,10 +149,10 @@ const schema = {
 
 #### Extras
 
-the `stateParams` function returns a proxy reflecting the defined schema that also contains:
+the `queryParams` function returns a proxy reflecting the defined schema that also contains:
 
 - a `$reset` function to clear the search params (it will also clear the unknown params in the url if you set `preserveUnknownParams` to `false`)
-- a `$searchParams` property that is the underlying `SvelteURLSearchParams` reactive URLSearchParams
+- a `$params` property that is the underlying `SvelteURLparams` reactive URLparams
 
 ## 4. Server Side
 
@@ -161,14 +161,14 @@ kit-query-params also exports a `parseURL` function. This function can be used t
 ```ts
 import { parseURL } from 'kit-query-params';
 export const load = ({ url }) => {
-	const searchParams = parseURL(url, {
+	const params = parseURL(url, {
 		search: 'string',
 		tags: ['number']
 	});
 	const result = await api.getCustomers({
-		search: searchParams.search,
+		search: params.search,
 		// search is of type string | null
-		tags: searchParams.tags
+		tags: params.tags
 		// tags is of type number[]
 	});
 	return {
