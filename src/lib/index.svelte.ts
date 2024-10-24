@@ -50,16 +50,12 @@ export const stateParams = <
 
 	cleanUnknownParams();
 
-	onNavigate(({ from, to, type }) => {
-		console.log('navigate', from, to, type);
-	});
-
 	// Sync the search params and the state with changes that occurs outside of a state mutation
 	twoWayBinding &&
 		afterNavigate(async ({ complete, to, delta }) => {
 			if (!to) return;
 			await complete;
-			console.log({ delta });
+
 			const newSearchParams = new URLSearchParams(to.url.search);
 			if (newSearchParams.toString() !== searchParams.toString()) {
 				let hasChanged = false;
@@ -93,9 +89,7 @@ export const stateParams = <
 	const updateLocation = debounce(() => {
 		cleanUnknownParams();
 		const query = searchParams.toString();
-
 		const currentSearchParams = new URLSearchParams(window.location.search);
-		console.log({ shallow }, query !== currentSearchParams.toString());
 		if (query !== currentSearchParams.toString()) {
 			if (shallow) {
 				(pushHistory ? pushState : replaceState)(`?${query}`, {});
@@ -107,7 +101,6 @@ export const stateParams = <
 					keepFocus: true,
 					noScroll: true,
 					replaceState: !pushHistory
-					// invalidateAll
 				});
 			}
 
@@ -142,11 +135,12 @@ export const stateParams = <
 		schema,
 		onUpdate: updateSearchParams,
 		clearPaths: (path) => {
-			Array.from(url.searchParams.keys()).forEach((key) => {
+			Array.from(searchParams.keys()).forEach((key) => {
 				if (key.startsWith(path)) {
-					url.searchParams.delete(key);
+					searchParams.delete(key);
 				}
 			});
+			updateLocation();
 		},
 		default: defaultValue,
 		enforceDefault,

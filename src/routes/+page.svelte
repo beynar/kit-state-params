@@ -29,6 +29,9 @@
 		shallow: false
 		// enforceDefault: true
 	});
+
+	const tag = $state({ name: 'one', value: 2 });
+	const name = $state(2);
 </script>
 
 {#snippet button(label: string, onclick: () => void)}
@@ -53,6 +56,12 @@
 	<div class="flex gap-4 flex-wrap">
 		{@render button('Reassign tags', () => {
 			searchParams.tags = [0, 1, 2];
+		})}
+		{@render button('Push a state', () => {
+			searchParams.tags.push(tag.value);
+		})}
+		{@render button('fitler tag', () => {
+			searchParams.tags = searchParams.tags.filter((t) => t !== 2);
 		})}
 		{@render button('Push into enum', () => {
 			searchParams.enums.push('test2');

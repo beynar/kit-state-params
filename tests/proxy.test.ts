@@ -2,6 +2,7 @@ import type { Schema } from '../src/lib/types.js';
 import { describe, expect, it } from 'vitest';
 
 import { createProxy } from '$lib/proxy.js';
+import { parseURL } from '$lib/utils.js';
 
 const schema = {
 	string: 'string',
@@ -431,5 +432,41 @@ describe('proxy', () => {
 		proxyWithEdgeCases.date = '2023-06-01';
 		expect(proxyWithEdgeCases.date).toEqual(new Date('2023-06-01'));
 		expect(url.searchParams.get('date')).toBe(new Date('2023-06-01').toISOString());
+	});
+
+	it('should handle push', () => {
+		const schema = {
+			tags: ['string']
+		} satisfies Schema;
+		const url = new URL('http://localhost');
+
+		const proxy = createProxy(parseURL(url, schema), {
+			schema,
+			onUpdate: (path, value) => {
+				if (!value) {
+					url.searchParams.delete(path);
+				} else {
+					url.searchParams.set(path, value);
+				}
+			},
+			clearPaths: (path) => {
+				Array.from(url.searchParams.keys()).forEach((key) => {
+					if (key.startsWith(path)) {
+						url.searchParams.delete(key);
+					}
+				});
+			},
+			searchParams: url.searchParams,
+			reset: () => {
+				console.log('Reset');
+			}
+		});
+
+		console.log('proxy.tags', proxy);
+		proxy.tags.push('hello');
+		console.log(proxy.tags.filter((x) => x !== 'hello'));
+		proxy.tags = proxy.tags.filter((x) => x !== 'hello');
+		console.log(proxy.tags.includes('hello'));
+		expect(proxy.tags).toEqual(['hello']);
 	});
 });
