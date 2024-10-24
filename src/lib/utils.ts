@@ -63,43 +63,43 @@ export const parseURL = <
 		for (const [key, schemaType] of Object.entries(currentSchema)) {
 			const newPath = currentPath ? `${currentPath}.${key}` : key;
 			const defaultValue = defaultSchema?.[key];
+			const isArray = Array.isArray(schemaType);
+			const type = isArray ? schemaType[0] : schemaType;
+			const primitive = isPrimitive(type) ? type : undefined;
+			const schema = isPrimitive(type) ? undefined : type;
 
-			if (typeof schemaType === 'string') {
-				// Handle primitive types
-				const value = pathMap.get(newPath) || defaultValue;
-				currentResult[key] =
-					value !== undefined && value !== null
-						? coercePrimitive(schemaType as Primitive, value)
-						: null;
-			} else if (Array.isArray(schemaType)) {
-				// Handle array types
-				currentResult[key] = [];
-				const arraySchema = schemaType[0];
-
-				for (let i = 0; ; i++) {
-					const arrayPath = `${newPath}.${i}`;
-					if (typeof arraySchema === 'string') {
+			if (primitive) {
+				if (isArray) {
+					currentResult[key] = [];
+					for (let i = 0; ; i++) {
+						const arrayPath = `${newPath}.${i}`;
 						const value = pathMap.get(arrayPath);
-						if (value === undefined) {
-							if (defaultValue?.[i]) {
-								currentResult[key][i] = defaultValue[i];
-								continue;
-							} else {
-								// end the loop
-								break;
-							}
-						}
-						currentResult[key].push(coercePrimitive(arraySchema as Primitive, value));
-					} else {
-						if (!Array.from(pathMap.keys()).some((path) => path.startsWith(arrayPath))) break;
-						currentResult[key][i] = {};
-						parseSchemaRecursive(arraySchema, currentResult[key][i], arrayPath, defaultValue?.[i]);
+						if (!value && !defaultValue?.[i]) break;
+						currentResult[key].push(
+							coercePrimitive(primitive as Primitive, value, defaultValue?.[i])
+						);
 					}
+				} else {
+					// Handle primitive types
+					const value = pathMap.get(newPath);
+					currentResult[key] = coercePrimitive(schemaType as Primitive, value, defaultValue);
 				}
-			} else if (typeof schemaType === 'object') {
-				// Handle nested object types
-				currentResult[key] = {};
-				parseSchemaRecursive(schemaType, currentResult[key], newPath, defaultValue);
+			} else if (schema) {
+				if (isArray) {
+					// Handle array types
+					currentResult[key] = [];
+
+					for (let i = 0; ; i++) {
+						const arrayPath = `${newPath}.${i}`;
+						const hasPaths = Array.from(pathMap.keys()).some((path) => path.startsWith(arrayPath));
+						if (!defaultValue?.[i] && !hasPaths) break;
+						currentResult[key][i] = {};
+						parseSchemaRecursive(schema, currentResult[key][i], arrayPath, defaultValue?.[i]);
+					}
+				} else {
+					currentResult[key] = {};
+					parseSchemaRecursive(schemaType, currentResult[key], newPath, defaultValue);
+				}
 			}
 		}
 	};

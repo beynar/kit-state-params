@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { debounce, stringifyPrimitive, parseURL } from '../src/lib/utils.js';
 import type { Schema } from '../src/lib/types.js';
-import { coercePrimitive } from '$lib/schema.js';
+import { coercePrimitive } from '$lib/coerce.js';
 
 describe('debounce', () => {
 	it('should delay function execution', async () => {

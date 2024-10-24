@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { coerceObject, coerceArray, coercePrimitiveArray, coercePrimitive } from '$lib/schema.js';
+import { coerceObject, coerceArray, coercePrimitiveArray, coercePrimitive } from '$lib/coerce.js';
 import type { Schema } from '$lib/types.js';
 
 describe('coerce functions', () => {

@@ -56,9 +56,9 @@ describe('parseURL with default values', () => {
 		const result = parseURL(searchParams, schema, defaultValue);
 		expect(result).toEqual({
 			...defaultValue,
-			id: null,
-			active: null,
-			color: null
+			id: 1,
+			active: true,
+			color: 'blue'
 		});
 	});
 
@@ -121,25 +121,6 @@ describe('parseURL with default values', () => {
 		const searchParams = new URLSearchParams({});
 		const result = parseURL(searchParams, schema, enumDefault);
 		expect(result).toEqual(enumDefault);
-	});
-
-	it('should use schema-defined types even when default value types differ', () => {
-		const mixedTypeDefault = {
-			id: '100' as unknown as number, // Intentionally wrong type
-			active: 1 as unknown as boolean, // Intentionally wrong type
-			created: '2023-01-01' as unknown as Date // Intentionally wrong type
-		};
-		const searchParams = new URLSearchParams({});
-		const result = parseURL(searchParams, schema, mixedTypeDefault);
-
-		expect(result).toEqual({
-			id: 100,
-			name: null,
-			active: true,
-			created: new Date('2023-01-01'),
-			tags: [],
-			color: null
-		});
 	});
 
 	it('should handle default values for nested schemas', () => {

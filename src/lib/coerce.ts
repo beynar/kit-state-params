@@ -1,6 +1,6 @@
 import type { OutputOfPrimitive, Primitive, Schema, SchemaOutput } from './types.js';
 
-export const validateEnum = (enumType: string, value: string | null) => {
+export const validateEnum = (enumType: string, value: string | null | undefined) => {
 	if (!value) return false;
 	const types = enumType.replace('<', '').replace('>', '').split(',');
 	return types.includes(value);
@@ -59,7 +59,7 @@ export const coercePrimitiveArray = (
 
 export const coercePrimitive = (
 	primitiveType: Primitive,
-	value: string | null,
+	value: string | null | undefined,
 	DEFAULT_VALUE: any = null
 ): OutputOfPrimitive<Primitive> => {
 	if (value === 'null' || value === '' || value === null) return DEFAULT_VALUE;

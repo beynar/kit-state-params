@@ -14,6 +14,7 @@ import type { Default, Opts, Schema, SchemaOutput } from './types.js';
 import { debounce, isValidPath, parseURL } from './utils.js';
 import { createProxy } from './proxy.js';
 import { building } from '$app/environment';
+import { coerceObject } from './coerce.js';
 
 export const stateParams = <
 	T extends Schema,
@@ -21,7 +22,7 @@ export const stateParams = <
 	Enforce extends boolean = false
 >({
 	schema,
-	default: defaultValue,
+	default: _defaultValue,
 	enforceDefault,
 	debounce: debounceTime = 200,
 	preserveUnknownParams = true,
@@ -31,9 +32,10 @@ export const stateParams = <
 	invalidate: invalidations = [],
 	shallow = false
 }: Opts<T, D, Enforce>) => {
+	const defaultValue = _defaultValue ? coerceObject(schema, _defaultValue) : undefined;
 	const url = building ? new URL('https://github.com/beynar/kit-state-params') : get(page).url;
 	let current = $state<SchemaOutput<T, D, Enforce>>(
-		parseURL<T, D, Enforce>(url, schema, defaultValue)
+		parseURL<T, D, Enforce>(url, schema, defaultValue as D)
 	);
 	let searchParams = new SvelteURLSearchParams(url.search);
 
