@@ -90,7 +90,7 @@ The `stateParams` function accepts an options object. Here's a table describing 
 
 ### Schema
 
-> [!Note on schema, validation and coercion]
+> [!NOTE]
 > The schema is not a validator per se. It will ensure that the type of the value is correct but it will also coerce the value to the correct type rather than throwing an error. For example, if the value is `"12"` and the type is `number`, it will be coerced to `12`. If the value can not be coerced, it will be set to `null`.
 >
 > This allows to never have invalid values in the state but also to preserve the schema structure.
