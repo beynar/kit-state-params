@@ -1,5 +1,6 @@
 import type { SvelteURLSearchParams } from 'svelte/reactivity';
-import type { Primitive, Schema, SchemaOutput } from './types.js';
+import type { Default, Primitive, Schema, SchemaOutput } from './types.js';
+import { coercePrimitive, validateEnum } from './coerce.js';
 
 export const debounce = (fn: () => void, delay: number) => {
 	let timeout: number;
@@ -9,16 +10,10 @@ export const debounce = (fn: () => void, delay: number) => {
 	};
 };
 
-const validateEnum = (enumType: string, value: string | null) => {
-	if (!value) return false;
-	const types = enumType.replace('<', '').replace('>', '').split(',');
-	return types.includes(value);
-};
-
 export const stringifyPrimitive = (primitiveType: Primitive, value: any): string | null => {
 	switch (primitiveType) {
 		case 'string': {
-			return value === null ? null : String(value);
+			return !value ? null : String(value);
 		}
 		case 'number': {
 			return value === null ? null : value || value === 0 ? value.toString() : null;
@@ -37,52 +32,24 @@ export const stringifyPrimitive = (primitiveType: Primitive, value: any): string
 	}
 };
 
-export const parsePrimitive = (primitiveType: Primitive, value: string | null) => {
-	if (value === 'null') return null;
-	switch (primitiveType) {
-		case 'string': {
-			return value || null;
-		}
-		case 'number': {
-			if (!value) return null;
-			const parsed = Number(value);
-			return isNaN(parsed) ? null : parsed;
-		}
-		case 'date': {
-			return value
-				? isNaN(new Date(value).getTime())
-					? null
-					: new Date(value === '0' ? 0 : value)
-				: null;
-		}
-
-		case 'boolean': {
-			return typeof value === 'boolean'
-				? value
-				: typeof value === 'string'
-					? value.toLowerCase() === 'true'
-						? true
-						: value.toLowerCase() === 'false'
-							? false
-							: null
-					: null;
-		}
-		default: {
-			return validateEnum(primitiveType, value) ? value : null;
-		}
-	}
+const getSearchParams = (data: string | URL | URLSearchParams | SvelteURLSearchParams) => {
+	return typeof data === 'string'
+		? new URL(data).searchParams
+		: data instanceof URL
+			? data.searchParams
+			: data;
 };
 
-export const parseURL = <S extends Schema>(
+export const parseURL = <
+	S extends Schema,
+	D extends Default<S> | undefined,
+	Enforce extends boolean = false
+>(
 	data: string | URL | URLSearchParams | SvelteURLSearchParams,
-	schema: S
-): SchemaOutput<S> => {
-	const searchParams =
-		typeof data === 'string'
-			? new URL(data).searchParams
-			: data instanceof URL
-				? data.searchParams
-				: data;
+	schema: S,
+	defaultValue?: D
+): SchemaOutput<S, D, Enforce> => {
+	const searchParams = getSearchParams(data);
 	const paths = Array.from(searchParams.entries());
 	const result: any = {};
 	const pathMap = new Map(paths);
@@ -90,41 +57,54 @@ export const parseURL = <S extends Schema>(
 	const parseSchemaRecursive = (
 		currentSchema: any,
 		currentResult: any,
-		currentPath: string = ''
+		currentPath: string = '',
+		defaultSchema: any
 	) => {
 		for (const [key, schemaType] of Object.entries(currentSchema)) {
 			const newPath = currentPath ? `${currentPath}.${key}` : key;
+			const defaultValue = defaultSchema?.[key];
+			const isArray = Array.isArray(schemaType);
+			const type = isArray ? schemaType[0] : schemaType;
+			const primitive = isPrimitive(type) ? type : undefined;
+			const schema = isPrimitive(type) ? undefined : type;
 
-			if (typeof schemaType === 'string') {
-				// Handle primitive types
-				const value = pathMap.get(newPath);
-				currentResult[key] = value ? parsePrimitive(schemaType as Primitive, value) : null;
-			} else if (Array.isArray(schemaType)) {
-				// Handle array types
-				currentResult[key] = [];
-				const arraySchema = schemaType[0];
-
-				for (let i = 0; ; i++) {
-					const arrayPath = `${newPath}.${i}`;
-					if (typeof arraySchema === 'string') {
+			if (primitive) {
+				if (isArray) {
+					currentResult[key] = [];
+					for (let i = 0; ; i++) {
+						const arrayPath = `${newPath}.${i}`;
 						const value = pathMap.get(arrayPath);
-						if (value === undefined) break;
-						currentResult[key].push(parsePrimitive(arraySchema as Primitive, value));
-					} else {
-						if (!Array.from(pathMap.keys()).some((path) => path.startsWith(arrayPath))) break;
-						currentResult[key][i] = {};
-						parseSchemaRecursive(arraySchema, currentResult[key][i], arrayPath);
+						if (!value && !defaultValue?.[i]) break;
+						currentResult[key].push(
+							coercePrimitive(primitive as Primitive, value, defaultValue?.[i])
+						);
 					}
+				} else {
+					// Handle primitive types
+					const value = pathMap.get(newPath);
+					currentResult[key] = coercePrimitive(schemaType as Primitive, value, defaultValue);
 				}
-			} else if (typeof schemaType === 'object') {
-				// Handle nested object types
-				currentResult[key] = {};
-				parseSchemaRecursive(schemaType, currentResult[key], newPath);
+			} else if (schema) {
+				if (isArray) {
+					// Handle array types
+					currentResult[key] = [];
+
+					for (let i = 0; ; i++) {
+						const arrayPath = `${newPath}.${i}`;
+						const hasPaths = Array.from(pathMap.keys()).some((path) => path.startsWith(arrayPath));
+						if (!defaultValue?.[i] && !hasPaths) break;
+						currentResult[key][i] = {};
+						parseSchemaRecursive(schema, currentResult[key][i], arrayPath, defaultValue?.[i]);
+					}
+				} else {
+					currentResult[key] = {};
+					parseSchemaRecursive(schemaType, currentResult[key], newPath, defaultValue);
+				}
 			}
 		}
 	};
 
-	parseSchemaRecursive(schema, result);
+	parseSchemaRecursive(schema, result, '', defaultValue);
 	return result;
 };
 
@@ -150,4 +130,11 @@ export const isValidPath = (path: string, schema: Schema): boolean => {
 	}
 
 	return true;
+};
+
+export const isPrimitive = (value: any): value is Primitive => {
+	return (
+		['string', 'number', 'date', 'boolean'].includes(value) ||
+		(value.startsWith?.('<') && value.endsWith?.('>'))
+	);
 };

@@ -1,8 +1,5 @@
-export type Simplify<T> = {
-	[KeyType in keyof T]: T[KeyType] extends SchemaOutput<infer O>
-		? Simplify<SchemaOutput<O>>
-		: T[KeyType];
-} & {};
+import { type SimplifyDeep } from 'type-fest';
+export type Simplify<T> = SimplifyDeep<T>;
 
 export type Primitive = 'string' | 'number' | 'date' | 'boolean' | `<${string}>`;
 
@@ -22,20 +19,34 @@ export type OutputOfPrimitive<T extends Primitive> = T extends 'string'
 				? boolean | null
 				: InferEnum<T>;
 
-export type SchemaOutput<T extends Schema> = {
+type Get<T, K> = K extends keyof T ? T[K] : undefined;
+
+type MaybeNotNullable<T, D, Enforce extends boolean> = D extends undefined
+	? T
+	: Enforce extends true
+		? Exclude<T, null>
+		: T;
+
+export type SchemaOutput<T extends Schema, D = undefined, Enforce extends boolean = false> = {
 	[K in keyof T]: T[K] extends Primitive
-		? OutputOfPrimitive<T[K]>
+		? MaybeNotNullable<OutputOfPrimitive<T[K]>, Get<D, K>, Enforce>
 		: T[K] extends Schema
-			? SchemaOutput<T[K]>
+			? SchemaOutput<T[K], Get<D, K>>
 			: T[K] extends [Schema]
-				? SchemaOutput<T[K][number]>[]
+				? SchemaOutput<T[K][number], Get<D, K>, Enforce>[]
 				: T[K] extends [Primitive]
-					? OutputOfPrimitive<T[K][number]>[]
+					? MaybeNotNullable<OutputOfPrimitive<T[K][number]>, D, Enforce>[]
 					: never;
 };
 
-export type Opts<S extends Schema> = {
+export type Opts<
+	S extends Schema,
+	D extends Default<S> | undefined,
+	Enforce extends boolean = false
+> = {
 	schema: S;
+	default?: D;
+	enforceDefault?: Enforce;
 	debounce?: number;
 	pushHistory?: boolean;
 	twoWayBinding?: boolean;
@@ -48,4 +59,16 @@ export type PrimitiveSchema = Record<string, Primitive>;
 
 export type Schema = {
 	[key: string]: Primitive | Schema | [Schema] | [Primitive];
+};
+
+export type Default<T extends Schema> = {
+	[K in keyof T]?: T[K] extends Primitive
+		? NonNullable<OutputOfPrimitive<T[K]>>
+		: T[K] extends Schema
+			? Default<T[K]>
+			: T[K] extends [Schema]
+				? Default<T[K][number]>[]
+				: T[K] extends [Primitive]
+					? NonNullable<OutputOfPrimitive<T[K][0]>>[]
+					: never;
 };

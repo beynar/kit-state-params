@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { debounce, stringifyPrimitive, parsePrimitive, parseURL } from '../src/lib/utils.js';
+import { debounce, stringifyPrimitive, parseURL } from '../src/lib/utils.js';
 import type { Schema } from '../src/lib/types.js';
+import { coercePrimitive } from '$lib/coerce.js';
 
 describe('debounce', () => {
 	it('should delay function execution', async () => {
@@ -98,7 +99,7 @@ describe('stringify', () => {
 	});
 
 	it('should handle empty string', () => {
-		expect(stringifyPrimitive('string', '')).toBe('');
+		expect(stringifyPrimitive('string', '')).toBe(null);
 	});
 
 	it('should handle zero as a valid number', () => {
@@ -119,86 +120,87 @@ describe('stringify', () => {
 	});
 });
 
-describe('parsePrimitive', () => {
+describe('coercePrimitive', () => {
 	it('should parse string values', () => {
-		expect(parsePrimitive('string', 'hello')).toBe('hello');
-		expect(parsePrimitive('string', '')).toBe(null);
+		expect(coercePrimitive('string', 'hello')).toBe('hello');
+		expect(coercePrimitive('string', '')).toBe(null);
 	});
 
 	it('should parse number values', () => {
-		expect(parsePrimitive('number', '42')).toBe(42);
-		expect(parsePrimitive('number', '0')).toBe(0);
-		expect(parsePrimitive('number', '')).toBe(null);
-		expect(parsePrimitive('number', 'not a number')).toBe(null);
+		expect(coercePrimitive('number', '42')).toBe(42);
+		expect(coercePrimitive('number', '0')).toBe(0);
+		expect(coercePrimitive('number', '')).toBe(null);
+		expect(coercePrimitive('number', 'not a number')).toBe(null);
 	});
 
 	it('should parse date values', () => {
-		expect(parsePrimitive('date', '2023-04-01T12:00:00Z')).toEqual(
+		expect(coercePrimitive('date', '2023-04-01T12:00:00Z')).toEqual(
 			new Date('2023-04-01T12:00:00Z')
 		);
-		expect(parsePrimitive('date', '')).toBe(null);
-		expect(parsePrimitive('date', 'invalid date')).toBe(null);
+		expect(coercePrimitive('date', '')).toBe(null);
+		expect(coercePrimitive('date', 'invalid date')).toBe(null);
 	});
 
 	it('should parse boolean values', () => {
-		expect(parsePrimitive('boolean', 'true')).toBe(true);
-		expect(parsePrimitive('boolean', 'false')).toBe(false);
-		expect(parsePrimitive('boolean', '')).toBe(null);
-		expect(parsePrimitive('boolean', 'invalid')).toBe(null);
+		expect(coercePrimitive('boolean', 'true')).toBe(true);
+		expect(coercePrimitive('boolean', 'false')).toBe(false);
+		expect(coercePrimitive('boolean', '')).toBe(null);
+		expect(coercePrimitive('boolean', 'invalid')).toBe(null);
 	});
 
 	it('should parse floating-point numbers', () => {
-		expect(parsePrimitive('number', '3.14')).toBe(3.14);
-		expect(parsePrimitive('number', '-0.01')).toBe(-0.01);
-		expect(parsePrimitive('number', '0.0')).toBe(0);
-		expect(parsePrimitive('number', '1e-10')).toBe(1e-10);
+		expect(coercePrimitive('number', '3.14')).toBe(3.14);
+		expect(coercePrimitive('number', '-0.01')).toBe(-0.01);
+		expect(coercePrimitive('number', '0.0')).toBe(0);
+		expect(coercePrimitive('number', '1e-10')).toBe(1e-10);
 	});
 
 	it('should handle whitespace-only strings', () => {
-		expect(parsePrimitive('string', '   ')).toBe('   ');
+		expect(coercePrimitive('string', '   ')).toBe('   ');
 	});
 
 	it('should handle extremely large or small numbers', () => {
-		expect(parsePrimitive('number', '1e20')).toBe(1e20);
-		expect(parsePrimitive('number', '1e-20')).toBe(1e-20);
-		expect(parsePrimitive('number', '9007199254740991')).toBe(9007199254740991); // MAX_SAFE_INTEGER
-		expect(parsePrimitive('number', '9007199254740992')).toBe(9007199254740992); // MAX_SAFE_INTEGER + 1
+		expect(coercePrimitive('number', '1e20')).toBe(1e20);
+		expect(coercePrimitive('number', '1e-20')).toBe(1e-20);
+		expect(coercePrimitive('number', '9007199254740991')).toBe(9007199254740991); // MAX_SAFE_INTEGER
+		expect(coercePrimitive('number', '9007199254740992')).toBe(9007199254740992); // MAX_SAFE_INTEGER + 1
 	});
 
 	it('should parse different date formats', () => {
-		expect(parsePrimitive('date', '2023-04-01')).toEqual(new Date('2023-04-01'));
-		expect(parsePrimitive('date', 'Sat, 01 Apr 2023 12:00:00 GMT')).toEqual(
+		expect(coercePrimitive('date', '2023-04-01')).toEqual(new Date('2023-04-01'));
+		expect(coercePrimitive('date', 'Sat, 01 Apr 2023 12:00:00 GMT')).toEqual(
 			new Date('2023-04-01T12:00:00.000Z')
 		);
 	});
 
 	it('should handle boolean-like strings', () => {
-		expect(parsePrimitive('boolean', 'TRUE')).toBe(true);
-		expect(parsePrimitive('boolean', 'FALSE')).toBe(false);
-		expect(parsePrimitive('boolean', '1')).toBe(null);
-		expect(parsePrimitive('boolean', '0')).toBe(null);
+		expect(coercePrimitive('boolean', 'TRUE')).toBe(true);
+		expect(coercePrimitive('boolean', 'FALSE')).toBe(false);
+		expect(coercePrimitive('boolean', '1')).toBe(true);
+		expect(coercePrimitive('boolean', '0')).toBe(false);
 	});
 
 	it('should handle special number cases', () => {
-		expect(parsePrimitive('number', 'Infinity')).toBe(Infinity);
-		expect(parsePrimitive('number', '-Infinity')).toBe(-Infinity);
-		expect(parsePrimitive('number', 'NaN')).toBe(null);
+		expect(coercePrimitive('number', 'Infinity')).toBe(Infinity);
+		expect(coercePrimitive('number', '-Infinity')).toBe(-Infinity);
+		expect(coercePrimitive('number', 'NaN')).toBe(null);
 	});
 
 	it('should handle date edge cases', () => {
-		expect(parsePrimitive('date', '0')).toEqual(new Date(0));
-		expect(parsePrimitive('date', '1970-01-01T00:00:00Z')).toEqual(new Date(0));
+		expect(coercePrimitive('date', '0')).toEqual(new Date(0));
+		expect(coercePrimitive('date', '1970-01-01T00:00:00Z')).toEqual(new Date(0));
 	});
 
 	it('should handle null value for all types', () => {
-		expect(parsePrimitive('string', null)).toBe(null);
-		expect(parsePrimitive('number', null)).toBe(null);
-		expect(parsePrimitive('date', null)).toBe(null);
-		expect(parsePrimitive('boolean', 'null')).toBe(null);
-		expect(parsePrimitive('string', 'null')).toBe(null);
-		expect(parsePrimitive('number', 'null')).toBe(null);
-		expect(parsePrimitive('date', 'null')).toBe(null);
-		expect(parsePrimitive('boolean', 'null')).toBe(null);
+		expect(coercePrimitive('string', null)).toBe(null);
+		console.log(coercePrimitive('number', null));
+		expect(coercePrimitive('number', null)).toBe(null);
+		expect(coercePrimitive('date', null)).toBe(null);
+		expect(coercePrimitive('boolean', 'null')).toBe(null);
+		expect(coercePrimitive('string', 'null')).toBe(null);
+		expect(coercePrimitive('number', 'null')).toBe(null);
+		expect(coercePrimitive('date', 'null')).toBe(null);
+		expect(coercePrimitive('boolean', 'null')).toBe(null);
 	});
 });
 
@@ -221,7 +223,7 @@ describe('parseURL', () => {
 			'tags.1': 'tag2'
 		});
 		const result = parseURL(searchParams, schema);
-		console.dir(result, { depth: null });
+
 		expect(result).toEqual({
 			id: 42,
 			name: 'John',

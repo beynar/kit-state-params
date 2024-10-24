@@ -4,18 +4,26 @@ import {
 	goto,
 	invalidate,
 	afterNavigate,
+	onNavigate,
 	pushState,
 	replaceState,
 	invalidateAll as _invalidateAll
 } from '$app/navigation';
 import { page } from '$app/stores';
-import type { Opts, Schema, SchemaOutput } from './types.js';
+import type { Default, Opts, Schema, SchemaOutput } from './types.js';
 import { debounce, isValidPath, parseURL } from './utils.js';
 import { createProxy } from './proxy.js';
 import { building } from '$app/environment';
+import { coerceObject } from './coerce.js';
 
-export const stateParams = <T extends Schema>({
+export const stateParams = <
+	T extends Schema,
+	D extends Default<T> | undefined,
+	Enforce extends boolean = false
+>({
 	schema,
+	default: _defaultValue,
+	enforceDefault,
 	debounce: debounceTime = 200,
 	preserveUnknownParams = true,
 	pushHistory = false,
@@ -23,9 +31,12 @@ export const stateParams = <T extends Schema>({
 	twoWayBinding = true,
 	invalidate: invalidations = [],
 	shallow = false
-}: Opts<T>) => {
+}: Opts<T, D, Enforce>) => {
+	const defaultValue = _defaultValue ? coerceObject(schema, _defaultValue) : undefined;
 	const url = building ? new URL('https://github.com/beynar/kit-state-params') : get(page).url;
-	let current = $state<SchemaOutput<T>>(parseURL(url, schema));
+	let current = $state<SchemaOutput<T, D, Enforce>>(
+		parseURL<T, D, Enforce>(url, schema, defaultValue as D)
+	);
 	let searchParams = new SvelteURLSearchParams(url.search);
 
 	const cleanUnknownParams = () => {
@@ -39,11 +50,16 @@ export const stateParams = <T extends Schema>({
 
 	cleanUnknownParams();
 
+	onNavigate(({ from, to, type }) => {
+		console.log('navigate', from, to, type);
+	});
+
 	// Sync the search params and the state with changes that occurs outside of a state mutation
 	twoWayBinding &&
-		afterNavigate(async ({ complete, to }) => {
+		afterNavigate(async ({ complete, to, delta }) => {
 			if (!to) return;
 			await complete;
+			console.log({ delta });
 			const newSearchParams = new URLSearchParams(to.url.search);
 			if (newSearchParams.toString() !== searchParams.toString()) {
 				let hasChanged = false;
@@ -79,6 +95,7 @@ export const stateParams = <T extends Schema>({
 		const query = searchParams.toString();
 
 		const currentSearchParams = new URLSearchParams(window.location.search);
+		console.log({ shallow }, query !== currentSearchParams.toString());
 		if (query !== currentSearchParams.toString()) {
 			if (shallow) {
 				(pushHistory ? pushState : replaceState)(`?${query}`, {});
@@ -89,8 +106,8 @@ export const stateParams = <T extends Schema>({
 				goto(`?${query}`, {
 					keepFocus: true,
 					noScroll: true,
-					replaceState: !pushHistory,
-					invalidateAll
+					replaceState: !pushHistory
+					// invalidateAll
 				});
 			}
 
@@ -98,15 +115,17 @@ export const stateParams = <T extends Schema>({
 		}
 	}, debounceTime);
 
-	const reset = () => {
+	const reset = (_enforceDefault = enforceDefault) => {
 		Array.from(searchParams.keys()).forEach((key) => {
 			const isValid = isValidPath(key, schema);
 			if (isValid || (!isValid && !preserveUnknownParams)) {
 				searchParams.delete(key);
 			}
 		});
-
-		Object.assign(current, parseURL(searchParams, schema));
+		Object.assign(
+			current,
+			parseURL(searchParams, schema, _enforceDefault ? defaultValue : undefined)
+		);
 		updateLocation();
 	};
 
@@ -119,9 +138,18 @@ export const stateParams = <T extends Schema>({
 		updateLocation();
 	};
 
-	return createProxy(current, {
-		schema: schema,
+	return createProxy<T, D, Enforce>(current, {
+		schema,
 		onUpdate: updateSearchParams,
+		clearPaths: (path) => {
+			Array.from(url.searchParams.keys()).forEach((key) => {
+				if (key.startsWith(path)) {
+					url.searchParams.delete(key);
+				}
+			});
+		},
+		default: defaultValue,
+		enforceDefault,
 		searchParams,
 		reset
 	});
